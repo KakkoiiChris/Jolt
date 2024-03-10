@@ -60,14 +60,7 @@ private fun repl() {
 
         val source = Source("<REPL>", text)
 
-        try {
-            exec(source)
-        }
-        catch (e:JoltError) {
-            System.err.println(e.message)
-
-            Thread.sleep(20)
-        }
+        exec(source)
     }
 }
 
@@ -81,14 +74,7 @@ private fun file(filePath: String) {
 
     val source = Source.of(path)
 
-    try {
-        exec(source)
-    }
-    catch (e:JoltError) {
-        System.err.println(e.message)
-
-        Thread.sleep(20)
-    }
+    exec(source)
 }
 
 /**
@@ -96,7 +82,7 @@ private fun file(filePath: String) {
  *
  * @param source The source code to execute
  */
-private fun exec(source: Source) {
+private fun exec(source: Source) = try {
     val (value, duration) = measureTimedValue {
         println("Executing '${source.text}' from '${source.name}'!")
 
@@ -108,4 +94,9 @@ private fun exec(source: Source) {
     }
 
     println("$JOLT $value\n\n${duration.inWholeNanoseconds / 1E6}ms".wrapRoundBox() + '\n')
+}
+catch (e: JoltError) {
+    System.err.println("${e.message}\n")
+
+    Thread.sleep(20)
 }
