@@ -19,7 +19,7 @@ import kakkoiichris.jolt.joltError
  *
  * @property source The code [Source] to convert
  */
-class Lexer(private val source: Source) : Iterator<Token<*>> {
+class Lexer(internal val source: Source) : Iterator<Token<*>> {
     companion object {
         /**
          * The null-terminator character, used to mark the end of the source.
