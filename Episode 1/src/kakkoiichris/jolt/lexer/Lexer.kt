@@ -15,11 +15,11 @@ import kakkoiichris.jolt.Source
 import kakkoiichris.jolt.joltError
 
 /**
- * A class to convert source code into tokens, one at a time via the [Iterator] mechanism.
+ * A class that converts source code into tokens, one at a time via the [Iterator] mechanism.
  *
  * @property source The code [Source] to convert
  */
-class Lexer(private val source: Source) : Iterator<Token<*>> {
+class Lexer(internal val source: Source) : Iterator<Token<*>> {
     companion object {
         /**
          * The null-terminator character, used to mark the end of the source.
@@ -214,7 +214,7 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
      * Produces an [error][JoltError] with the given error message if the given character is not skipped.
      *
      * @param char The character to skip
-     * @param errorMessage The error message to show
+     * @param errorMessage The message for the error
      *
      * @throws JoltError If the character is not skipped
      */

@@ -72,6 +72,7 @@ sealed interface TokenType {
 /**
  * A class to represent the smallest lexical units of the source code.
  *
+ * @param T The token type to be associated with this token
  * @property context The location data for this token
  * @property type The type of this token
  */
