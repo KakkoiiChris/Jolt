@@ -27,13 +27,37 @@ const val UNDERLINE = '═'
  */
 @JvmInline
 value class CharSet(private val chars: String) {
+    /**
+     * The vertical line character.
+     */
     val vertical get() = chars[0]
+    /**
+     * The horizontal line character.
+     */
     val horizontal get() = chars[1]
+    /**
+     * The upper left corner character.
+     */
     val upLeft get() = chars[2]
+    /**
+     * The upper right corner character.
+     */
     val upRight get() = chars[3]
+    /**
+     * The lower left corner character.
+     */
     val downLeft get() = chars[4]
+    /**
+     * The lower right corner character
+     */
     val downRight get() = chars[5]
+    /**
+     * The left facing T intersection character.
+     */
     val crossLeft get() = chars[6]
+    /**
+     * The right facing T intersection character.
+     */
     val crossRight get() = chars[7]
 }
 
@@ -69,8 +93,6 @@ private fun String.wrapBox(charSet: CharSet) = buildString {
     append("${charSet.downLeft}${charSet.horizontal.toString().repeat(maxWidth + 2)}${charSet.downRight}")
 }
 
-private const val SINGLE_CHARS = "│─┌┐└┘├┤"
-
 /**
  * Wraps a single-outline box around the receiving string.
  *
@@ -79,9 +101,7 @@ private const val SINGLE_CHARS = "│─┌┐└┘├┤"
  * @return A copy of the string with a box around it
  */
 fun String.wrapSingleBox() =
-    wrapBox(CharSet(SINGLE_CHARS))
-
-private const val ROUND_CHARS = "│─╭╮╰╯├┤"
+    wrapBox(CharSet("│─┌┐└┘├┤"))
 
 /**
  * Wraps a single-outline rounded-corner box around the receiving string.
@@ -91,9 +111,7 @@ private const val ROUND_CHARS = "│─╭╮╰╯├┤"
  * @return A copy of the string with a rounded box around it
  */
 fun String.wrapRoundBox() =
-    wrapBox(CharSet(ROUND_CHARS))
-
-private const val DOUBLE_CHARS = "║═╔╗╚╝╠╣"
+    wrapBox(CharSet("│─╭╮╰╯├┤"))
 
 /**
  * Wraps a double-outline box around the receiving string.
@@ -103,4 +121,4 @@ private const val DOUBLE_CHARS = "║═╔╗╚╝╠╣"
  * @return A copy of the string with a double box around it
  */
 fun String.wrapDoubleBox() =
-    wrapBox(CharSet(DOUBLE_CHARS))
+    wrapBox(CharSet("║═╔╗╚╝╠╣"))

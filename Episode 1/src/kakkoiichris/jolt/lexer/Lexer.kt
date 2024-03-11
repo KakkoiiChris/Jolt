@@ -94,11 +94,9 @@ class Lexer(private val source: Source) : Iterator<Token> {
     }
 
     /**
-     * Gets the location of the current position within the [Lexer].
-     *
      * @param length The length of the token
      *
-     * @return A new [Context] instance
+     * @return A new [Context] instance with the location data of the current position within the [Lexer]
      */
     private fun here(length: Int = 1) =
         Context(source.name, row, column, length)

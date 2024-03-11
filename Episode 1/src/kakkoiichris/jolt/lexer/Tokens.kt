@@ -25,11 +25,9 @@ data class Context(
     val length: Int,
 ) {
     /**
-     * Creates a new [Context] that encompasses both this token the other token.
-     *
      * @param other The end [Context] to encompass
      *
-     * @return A new [Context]
+     * @return A new [Context] instance spanning from this token to the other token
      */
     operator fun rangeTo(other: Context) =
         Context(name, row, column, other.length - length + 1)
