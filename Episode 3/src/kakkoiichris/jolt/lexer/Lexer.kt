@@ -301,22 +301,27 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
      */
     private fun number(): Token<TokenType.Value> {
         val start = here()
+        var end: Context
 
         val result = buildString {
             do {
+                end = here()
+
                 take()
             }
             while (match(Char::isDigit))
 
             if (match('.')) {
                 do {
+                    end = here()
+
                     take()
                 }
                 while (match(Char::isDigit))
             }
         }
 
-        val context = start..here()
+        val context = start..end
 
         val type = TokenType.Value(result.toDouble())
 

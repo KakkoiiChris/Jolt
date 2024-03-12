@@ -12,6 +12,7 @@ package kakkoiichris.jolt
 
 import kakkoiichris.jolt.lexer.Lexer
 import kakkoiichris.jolt.parser.Parser
+import kakkoiichris.jolt.runtime.Runtime
 import java.nio.file.Paths
 import kotlin.time.measureTimedValue
 
@@ -93,12 +94,12 @@ private fun exec(source: Source) = try {
 
         val program = parser.parse()
 
-        for (stmt in program) {
-            println(stmt)
-        }
+        val runtime = Runtime(source)
+
+        runtime.run(program)
     }
 
-    println("$JOLT $value\n\n${duration.inWholeNanoseconds / 1E6}ms".wrapRoundBox() + '\n')
+    println("""$JOLT $value\n\n${duration.inWholeNanoseconds / 1E6}ms""".wrapRoundBox() + '\n')
 }
 catch (e: JoltError) {
     System.err.println("${e.message}\n")
