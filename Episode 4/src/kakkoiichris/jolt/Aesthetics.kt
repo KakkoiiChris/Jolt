@@ -16,6 +16,11 @@ package kakkoiichris.jolt
 const val JOLT = '⚡'
 
 /**
+ * The double horizontal box drawing character, used to underline locations of errors.
+ */
+const val UNDERLINE = '═'
+
+/**
  * An intermediate class to give names for the different
  *
  * @property chars The characters to be used for creating boxes
