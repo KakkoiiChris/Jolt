@@ -46,6 +46,16 @@ sealed interface Expr {
     }
 
     /**
+     * Represents a single nested value expression.
+     *
+     * @property expr The value of this expression
+     */
+    data class Nested(override val context: Context, val expr: Expr) : Expr {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitNestedExpr(this)
+    }
+
+    /**
      * Represents a single unary operator expression.
      *
      * @property operator The operator for this expression
@@ -97,7 +107,22 @@ sealed interface Expr {
             /**
              *
              */
-            SUBTRACT(TokenType.Symbol.DASH);
+            SUBTRACT(TokenType.Symbol.DASH),
+
+            /**
+             *
+             */
+            MULTIPLY(TokenType.Symbol.STAR),
+
+            /**
+             *
+             */
+            DIVIDE(TokenType.Symbol.SLASH),
+
+            /**
+             *
+             */
+            REMAINDER(TokenType.Symbol.PERCENT);
 
             companion object {
                 /**
@@ -129,6 +154,13 @@ sealed interface Expr {
          * @param expr The statement to visit
          */
         fun visitValueExpr(expr: Value): X
+
+        /**
+         * Visits a nested expression.
+         *
+         * @param expr The statement to visit
+         */
+        fun visitNestedExpr(expr: Nested): X
 
         /**
          * Visits a value expression.

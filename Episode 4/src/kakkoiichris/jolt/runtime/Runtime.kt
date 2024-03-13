@@ -40,17 +40,32 @@ class Runtime(private val source: Source) : Expr.Visitor<Double>, Stmt.Visitor<U
     /**
      *
      */
+    override fun visitNestedExpr(expr: Expr.Nested) = visit(expr.expr)
+
+    /**
+     * @param expr The expression to visit
+     *
+     * @return The value contained by this expression
+     */
     override fun visitUnaryExpr(expr: Expr.Unary) = when (expr.operator) {
         Expr.Unary.Operator.NEGATE -> -visit(expr.expr)
     }
 
     /**
+     * @param expr The expression to visit
      *
+     * @return The value contained by this expression
      */
     override fun visitBinaryExpr(expr: Expr.Binary) = when (expr.operator) {
-        Expr.Binary.Operator.ADD      -> visit(expr.left) + visit(expr.right)
+        Expr.Binary.Operator.ADD       -> visit(expr.left) + visit(expr.right)
 
-        Expr.Binary.Operator.SUBTRACT -> visit(expr.left) - visit(expr.right)
+        Expr.Binary.Operator.SUBTRACT  -> visit(expr.left) - visit(expr.right)
+
+        Expr.Binary.Operator.MULTIPLY  -> visit(expr.left) * visit(expr.right)
+
+        Expr.Binary.Operator.DIVIDE    -> visit(expr.left) / visit(expr.right)
+
+        Expr.Binary.Operator.REMAINDER -> visit(expr.left) % visit(expr.right)
     }
 
     /**

@@ -175,16 +175,37 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      *
      */
     private fun additive(): Expr {
-        var expr = prefix()
+        var expr = multiplicative()
 
         while (matchAny(TokenType.Symbol.PLUS, TokenType.Symbol.DASH)) {
             val (_, type) = get<TokenType.Symbol>()
 
             val operator = Expr.Binary.Operator[type]
 
+            val right = multiplicative()
+
+            val context = expr.context..here()
+
+            expr = Expr.Binary(context, operator, expr, right)
+        }
+
+        return expr
+    }
+
+    /**
+     *
+     */
+    private fun multiplicative(): Expr {
+        var expr = prefix()
+
+        while (matchAny(TokenType.Symbol.STAR, TokenType.Symbol.SLASH, TokenType.Symbol.PERCENT)) {
+            val (_, type) = get<TokenType.Symbol>()
+
+            val operator = Expr.Binary.Operator[type]
+
             val right = prefix()
 
-            val context = expr.context..right.context
+            val context = expr.context..here()
 
             expr = Expr.Binary(context, operator, expr, right)
         }
@@ -203,20 +224,48 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
             val expr = prefix()
 
-            val context = start..expr.context
+            val context = expr.context..here()
 
             return Expr.Unary(context, operator, expr)
         }
 
-        return valueExpr()
+        return terminal()
+    }
+
+    /**
+     *
+     */
+    private fun terminal() = when {
+        match<TokenType.Value>()           -> value()
+
+        match(TokenType.Symbol.LEFT_PAREN) -> nested()
+
+        else -> joltError("Invalid terminal starting with '${token.type}'", source.getLine(here().row), here())
     }
 
     /**
      * @return A single value expression
      */
-    private fun valueExpr(): Expr.Value {
+    private fun value(): Expr.Value {
         val (context, type) = get<TokenType.Value>()
 
         return Expr.Value(context, type.value)
+    }
+
+    /**
+     * @return A single value expression
+     */
+    private fun nested(): Expr.Nested {
+        val start = here()
+
+        mustSkip(TokenType.Symbol.LEFT_PAREN, "")
+
+        val expr = expr()
+
+        mustSkip(TokenType.Symbol.RIGHT_PAREN, "")
+
+        val context = start..here()
+
+        return Expr.Nested(context, expr)
     }
 }
