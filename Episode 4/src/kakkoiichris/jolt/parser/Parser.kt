@@ -58,9 +58,9 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         token.type == type
 
     /**
-     * @param type The token type to match
+     * @param types The token types to match
      *
-     * @return `true` if the token type was matched, or `false` otherwise
+     * @return `true` if any of the token types were matched, or `false` otherwise
      */
     private fun matchAny(vararg types: TokenType) =
         types.any { match(it) }
@@ -172,7 +172,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         additive()
 
     /**
-     *
+     * @return A single additive binary expression if a '+' or '-' is present
      */
     private fun additive(): Expr {
         var expr = multiplicative()
@@ -193,7 +193,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
-     *
+     * @return A single multiplicative binary expression if a '*', '/',  or '%' is present
      */
     private fun multiplicative(): Expr {
         var expr = prefix()
@@ -214,7 +214,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
-     *
+     * @return A single prefix unary expression if a '-' is present
      */
     private fun prefix(): Expr {
         if (match(TokenType.Symbol.DASH)) {
@@ -224,7 +224,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
             val expr = prefix()
 
-            val context = expr.context..here()
+            val context = start..here()
 
             return Expr.Unary(context, operator, expr)
         }
@@ -233,7 +233,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
-     *
+     * @return A single terminal expression
      */
     private fun terminal() = when {
         match<TokenType.Value>()           -> value()
@@ -253,16 +253,16 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
-     * @return A single value expression
+     * @return A single nested expression
      */
     private fun nested(): Expr.Nested {
         val start = here()
 
-        mustSkip(TokenType.Symbol.LEFT_PAREN, "")
+        mustSkip(TokenType.Symbol.LEFT_PAREN, "BROKEN LEFT PAREN")
 
         val expr = expr()
 
-        mustSkip(TokenType.Symbol.RIGHT_PAREN, "")
+        mustSkip(TokenType.Symbol.RIGHT_PAREN, "Expected a right parenthesis")
 
         val context = start..here()
 

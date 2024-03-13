@@ -59,24 +59,26 @@ sealed interface Expr {
      * Represents a single unary operator expression.
      *
      * @property operator The operator for this expression
-     * @property expr The operand of this expression
+     * @property operand The operand of this expression
      */
-    data class Unary(override val context: Context, val operator: Operator, val expr: Expr) : Expr {
+    data class Unary(override val context: Context, val operator: Operator, val operand: Expr) : Expr {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitUnaryExpr(this)
 
         /**
+         * An enum containing all possible unary operators.
          *
+         * @property symbol The symbol token type associated with this operator
          */
         enum class Operator(val symbol: TokenType.Symbol) {
             /**
-             *
+             * The negation operator.
              */
             NEGATE(TokenType.Symbol.DASH);
 
             companion object {
                 /**
-                 *
+                 * @return The operator whose symbol equals the given symbol
                  */
                 operator fun get(symbol: TokenType.Symbol) =
                     entries.first { it.symbol == symbol }
@@ -88,45 +90,47 @@ sealed interface Expr {
      * Represents a single binary operator expression.
      *
      * @property operator The operator for this expression
-     * @property left The left operand of this expression
-     * @property right The right operand of this expression
+     * @property operandLeft The left operand of this expression
+     * @property operandRight The right operand of this expression
      */
-    data class Binary(override val context: Context, val operator: Operator, val left: Expr, val right: Expr) : Expr {
+    data class Binary(override val context: Context, val operator: Operator, val operandLeft: Expr, val operandRight: Expr) : Expr {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitBinaryExpr(this)
 
         /**
+         * An enum containing all possible binary operators.
          *
+         * @property symbol The symbol token type associated with this operator
          */
         enum class Operator(val symbol: TokenType.Symbol) {
             /**
-             *
+             * The addition operator.
              */
             ADD(TokenType.Symbol.PLUS),
 
             /**
-             *
+             * The subtraction operator.
              */
             SUBTRACT(TokenType.Symbol.DASH),
 
             /**
-             *
+             * The multiplication operator.
              */
             MULTIPLY(TokenType.Symbol.STAR),
 
             /**
-             *
+             * The division operator.
              */
             DIVIDE(TokenType.Symbol.SLASH),
 
             /**
-             *
+             * The remainder operator.
              */
             REMAINDER(TokenType.Symbol.PERCENT);
 
             companion object {
                 /**
-                 *
+                 * @return The operator whose symbol equals the given symbol
                  */
                 operator fun get(symbol: TokenType.Symbol) =
                     entries.first { it.symbol == symbol }
