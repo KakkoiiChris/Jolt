@@ -100,13 +100,20 @@ private fun file(filePath: String) {
 
     val source = Source.of(path)
 
-    val lexer = Lexer(source)
+    try {
+        val lexer = Lexer(source)
 
-    val parser = Parser(source, lexer)
+        val parser = Parser(source, lexer)
 
-    val program = parser.parse()
+        val program = parser.parse()
 
-    val runtime = Runtime(source)
+        val runtime = Runtime(source)
 
-    runtime.run(program)
+        runtime.run(program)
+    }
+    catch (e: JoltError) {
+        System.err.println("${e.message}\n")
+
+        Thread.sleep(20)
+    }
 }
