@@ -26,8 +26,14 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
          */
         private const val NUL = '\u0000'
 
+        /**
+         * @return `true` if the given character is alphabetic or is an underscore, or `false` otherwise
+         */
         fun isWordStartChar(char: Char) = char.isLetter() || char == '_'
 
+        /**
+         * @return `true` if the given character is alphanumeric or is an underscore, or `false` otherwise
+         */
         fun isWordChar(char: Char) = char.isLetterOrDigit() || char == '_'
     }
 
@@ -82,7 +88,7 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
                 continue
             }
 
-            // Text to turn into tokens
+            // Text to turn into tokens...
             return when {
                 match(Char::isDigit)     -> number()
 
@@ -93,6 +99,15 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
         }
 
         return endOfFile()
+    }
+
+    /**
+     * Sets the counters to their initial positions so the lexer can be used again.
+     */
+    fun reset() {
+        pos = 0
+        row = 1
+        column = 1
     }
 
     /**
@@ -303,7 +318,7 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
     }
 
     /**
-     * @return A [token][Token] with a [Value][TokenType.Value] token [type][TokenType] containing the lexed number
+     * @return A [token][Token] with a [Value][TokenType.Value] token type containing the lexed number
      */
     private fun number(): Token<TokenType.Value> {
         val start = here()
@@ -330,7 +345,7 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
     }
 
     /**
-     *
+     * @return A [token][Token] with a [Keyword][TokenType.Keyword] token type if the lexed word is a valid keyword, or a [Name][TokenType.Name] token type otherwise
      */
     private fun word(): Token<*> {
         val start = here()

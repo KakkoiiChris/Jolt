@@ -44,6 +44,23 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
+     * Parses a single expression.
+     *
+     * @return A single expression
+     */
+    fun parseExpr() =
+        expr()
+
+    /**
+     * Resets this parser's lexer, and starts the parser over from the beginning.
+     */
+    fun reset() {
+        lexer.reset()
+
+        token = lexer.next()
+    }
+
+    /**
      * @return The context of the current [token]
      */
     private fun here() =
@@ -168,7 +185,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         val name = nameExpr()
 
-        var expr: Expr? = null
+        var expr: Expr = Double.NaN.toValue(here())
 
         if (skip(TokenType.Symbol.EQUAL)) {
             expr = expr()
@@ -199,7 +216,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         assignExpr()
 
     /**
-     *
+     * @return A single assignment expression if an '=' is present
      */
     private fun assignExpr(): Expr {
         val expr = additiveExpr()

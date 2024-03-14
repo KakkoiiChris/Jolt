@@ -45,7 +45,7 @@ sealed interface Stmt {
     /**
      * Represents an empty statement that does nothing.
      */
-    data class Declaration(override val context: Context, val constant: Boolean, val name: Expr.Name, val expr: Expr?) : Stmt {
+    data class Declaration(override val context: Context, val constant: Boolean, val name: Expr.Name, val expr: Expr) : Stmt {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitDeclarationStmt(this)
     }

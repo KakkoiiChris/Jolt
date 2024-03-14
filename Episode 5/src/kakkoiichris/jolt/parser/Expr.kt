@@ -46,7 +46,9 @@ sealed interface Expr {
     }
 
     /**
+     * Represents a single name expression.
      *
+     * @property value The name of this expression
      */
     data class Name(override val context: Context, val value: String) : Expr {
         override fun <X> accept(visitor: Visitor<X>): X =
@@ -147,7 +149,10 @@ sealed interface Expr {
     }
 
     /**
+     * Represents a single assignment operator expression.
      *
+     * @property name The variable name to assign to
+     * @property value The value to assign
      */
     data class Assign(override val context: Context, val name: Name, val value: Expr) : Expr {
         override fun <X> accept(visitor: Visitor<X>): X =
@@ -211,3 +216,15 @@ sealed interface Expr {
         fun visitAssignExpr(expr: Assign): X
     }
 }
+
+/**
+ * Helper method to wrap the number into a value expression.
+ *
+ * @receiver The value to wrap
+ *
+ * @param context The [Context] to give the new expression
+ *
+ * @return A [Value][Expr.Value] expression
+ */
+fun Double.toValue(context: Context = Context.none) =
+    Expr.Value(context, this)

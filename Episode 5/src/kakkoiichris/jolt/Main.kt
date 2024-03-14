@@ -15,6 +15,8 @@ import kakkoiichris.jolt.parser.Parser
 import kakkoiichris.jolt.runtime.Memory
 import kakkoiichris.jolt.runtime.Runtime
 import java.nio.file.Paths
+import kotlin.time.Duration
+import kotlin.time.TimedValue
 import kotlin.time.measureTimedValue
 
 /**
@@ -67,25 +69,42 @@ private fun repl() {
 
         val source = Source("<REPL>", text)
 
-        try {
-            val (value, duration) = measureTimedValue {
-                val lexer = Lexer(source)
+        val lexer = Lexer(source)
 
-                val parser = Parser(source, lexer)
+        val parser = Parser(source, lexer)
 
+        val (value, duration) = try {
+            measureTimedValue {
                 val program = parser.parse()
 
                 val runtime = Runtime(source, memory)
 
                 runtime.run(program)
             }
-
-            println("$JOLT $value\n\n${duration.inWholeNanoseconds / 1E6}ms".wrapRoundBox() + '\n')
         }
         catch (e: JoltError) {
-            System.err.println("${e.message}\n")
+            try {
+                measureTimedValue {
+                    parser.reset()
 
-            Thread.sleep(20)
+                    val expr = parser.parseExpr()
+
+                    val runtime = Runtime(source, memory)
+
+                    runtime.runExpr(expr)
+                }
+            }
+            catch (e: JoltError) {
+                System.err.println("${e.message}\n")
+
+                Thread.sleep(20)
+
+                TimedValue(0.0, Duration.ZERO)
+            }
+        }
+
+        if (duration != Duration.ZERO) {
+            println("$JOLT ${value.truncate()}\n\n${duration.inWholeNanoseconds / 1E6}ms".wrapRoundBox() + '\n')
         }
     }
 }

@@ -1,5 +1,16 @@
+/********************************************
+ * ::::::::::: ::::::::  :::    ::::::::::: *
+ *     :+:    :+:    :+: :+:        :+:     *
+ *     +:+    +:+    +:+ +:+        +:+     *
+ *     +#+    +#+    +:+ +#+        +#+     *
+ *     +#+    +#+    +#+ +#+        +#+     *
+ * #+# #+#    #+#    #+# #+#        #+#     *
+ *  #####      ########  ########## ###     *
+ *            Scripting Language            *
+ ********************************************/
 package kakkoiichris.jolt.runtime
 
+import kakkoiichris.jolt.JoltError
 import kakkoiichris.jolt.Source
 import kakkoiichris.jolt.joltError
 import kakkoiichris.jolt.parser.Expr
@@ -10,10 +21,9 @@ import kakkoiichris.jolt.parser.Stmt
  * A class that executes programs by implementing the visitors of both the Expr and Stmt class.
  */
 class Runtime(private val source: Source, private val memory: Memory = Memory()) : Expr.Visitor<Double>, Stmt.Visitor<Unit> {
-    /**
-     * The value of the last expression.
-     */
-    private var last = 0.0
+    init {
+        memory["\$last"] = Memory.Record(false, 0.0)
+    }
 
     /**
      * Visits each of the program's statements in order.
@@ -27,7 +37,22 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
             visit(stmt)
         }
 
-        return last
+        return 0.0
+    }
+
+    /**
+     * Visits each of the program's statements in order.
+     *
+     * @param program The program to execute
+     *
+     * @return The value of the last expression
+     */
+    fun runExpr(expr: Expr): Double {
+        val value = visit(expr)
+
+        memory["_"] = Memory.Record(true, value)
+
+        return value
     }
 
     /**
@@ -38,7 +63,9 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
     override fun visitValueExpr(expr: Expr.Value) = expr.value
 
     /**
+     * @return The value of the variable stored in memory
      *
+     * @throws JoltError If the variable name is not present in memory
      */
     override fun visitNameExpr(expr: Expr.Name) =
         memory[expr.value]?.value
@@ -78,17 +105,21 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
     }
 
     /**
+     * Changes the value of the variable stored in memory.
      *
+     * @return The value assigned
+     *
+     * @throws JoltError If the variable name is not present in memory, or if the variable is constant
      */
     override fun visitAssignExpr(expr: Expr.Assign): Double {
-        val (constant, _) = memory[expr.name.value]
+        val record = memory[expr.name.value]
             ?: joltError("Variable '${expr.name.value}' is undeclared", source.getLine(expr.name.context.row), expr.name.context)
 
-        if (constant) joltError("Cannot assign to constant '${expr.name.value}'", source.getLine(expr.name.context.row), expr.name.context)
+        if (record.constant) joltError("Cannot assign to constant '${expr.name.value}'", source.getLine(expr.name.context.row), expr.name.context)
 
         val value = visit(expr.value)
 
-        memory[expr.name.value] = Memory.VariableRecord(false, value)
+        record.value = value
 
         return value
     }
@@ -101,16 +132,16 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
     override fun visitEmptyStmt(stmt: Stmt.Empty) = Unit
 
     /**
-     *
+     * Registers a new variable in memory with the given value
      */
     override fun visitDeclarationStmt(stmt: Stmt.Declaration) {
         val (_, constant, name, expr) = stmt
 
         if (memory[name.value] != null) joltError("Variable '${name.value}' is already declared", source.getLine(name.context.row), name.context)
 
-        val value = if (expr == null) Double.NaN else visit(expr)
+        val value = visit(expr)
 
-        memory[name.value] = Memory.VariableRecord(constant, value)
+        memory[name.value] = Memory.Record(constant, value)
     }
 
     /**
@@ -119,13 +150,6 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
      * @param stmt The statement to visit
      */
     override fun visitExpressionStmt(stmt: Stmt.Expression) {
-        last = visit(stmt.expr)
-
-        // TODO: Example Interpreter Error
-        if (last == 42.0) {
-            joltError("The meaning of life", source.getLine(stmt.expr.context.row), stmt.expr.context)
-        }
-
-        println(last)
+        visit(stmt.expr)
     }
 }
