@@ -104,7 +104,7 @@ private fun repl() {
         }
 
         if (duration != Duration.ZERO) {
-            println("$JOLT ${value.truncate()}\n\n${duration.inWholeNanoseconds / 1E6}ms".wrapRoundBox() + '\n')
+            println("$JOLT $value\n\n${duration.inWholeNanoseconds / 1E6}ms".wrapRoundBox() + '\n')
         }
     }
 }

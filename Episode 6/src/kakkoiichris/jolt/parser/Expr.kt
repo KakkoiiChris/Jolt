@@ -10,6 +10,7 @@
  ********************************************/
 package kakkoiichris.jolt.parser
 
+import kakkoiichris.jolt.JoltValue
 import kakkoiichris.jolt.lexer.Context
 import kakkoiichris.jolt.lexer.TokenType
 
@@ -40,7 +41,7 @@ sealed interface Expr {
      *
      * @property value The value of this expression
      */
-    data class Value(override val context: Context, val value: Double) : Expr {
+    data class Value(override val context: Context, val value: JoltValue<*>) : Expr {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitValueExpr(this)
     }
@@ -84,7 +85,12 @@ sealed interface Expr {
             /**
              * The negation operator.
              */
-            NEGATE(TokenType.Symbol.DASH);
+            NEGATE(TokenType.Symbol.DASH),
+
+            /**
+             * The not operator.
+             */
+            NOT(TokenType.Symbol.EXCLAMATION);
 
             companion object {
                 /**
@@ -113,6 +119,46 @@ sealed interface Expr {
          * @property symbol The symbol token type associated with this operator
          */
         enum class Operator(val symbol: TokenType.Symbol) {
+            /**
+             * The logical or operator.
+             */
+            OR(TokenType.Symbol.DOUBLE_PIPE),
+
+            /**
+             * The logical and operator.
+             */
+            AND(TokenType.Symbol.DOUBLE_AMPERSAND),
+
+            /**
+             * The equal operator.
+             */
+            EQUAL(TokenType.Symbol.DOUBLE_EQUAL),
+
+            /**
+             * The not equal operator.
+             */
+            NOT_EQUAL(TokenType.Symbol.EXCLAMATION_EQUAL),
+
+            /**
+             * The less than operator.
+             */
+            LESS(TokenType.Symbol.LESS),
+
+            /**
+             * The less than or equal to operator.
+             */
+            LESS_EQUAL(TokenType.Symbol.LESS_EQUAL),
+
+            /**
+             * The greater than operator.
+             */
+            GREATER(TokenType.Symbol.GREATER),
+
+            /**
+             * The greater than or equal to operator.
+             */
+            GREATER_EQUAL(TokenType.Symbol.GREATER_EQUAL),
+
             /**
              * The addition operator.
              */
@@ -226,5 +272,17 @@ sealed interface Expr {
  *
  * @return A [Value][Expr.Value] expression
  */
+fun Boolean.toValue(context: Context = Context.none) =
+    Expr.Value(context, JoltValue.Boolean(this))
+
+/**
+ * Helper method to wrap the number into a value expression.
+ *
+ * @receiver The value to wrap
+ *
+ * @param context The [Context] to give the new expression
+ *
+ * @return A [Value][Expr.Value] expression
+ */
 fun Double.toValue(context: Context = Context.none) =
-    Expr.Value(context, this)
+    Expr.Value(context, JoltValue.Number(this))

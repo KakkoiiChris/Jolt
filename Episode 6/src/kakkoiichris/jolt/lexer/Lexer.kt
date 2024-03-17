@@ -27,17 +27,22 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
          */
         private const val NUL = '\u0000'
 
-        val literals = listOf(true, false).map { JoltValue.Boolean(it) }.associateBy { it.toString() }
+        /**
+         *
+         */
+        private val literals = listOf(true, false)
+            .map { JoltValue.Boolean(it) }
+            .associateBy { it.toString() }
 
         /**
          * @return `true` if the given character is alphabetic or is an underscore, or `false` otherwise
          */
-        fun isWordStartChar(char: Char) = char.isLetter() || char == '_'
+        private fun isWordStartChar(char: Char) = char.isLetter() || char == '_'
 
         /**
          * @return `true` if the given character is alphanumeric or is an underscore, or `false` otherwise
          */
-        fun isWordChar(char: Char) = char.isLetterOrDigit() || char == '_'
+        private fun isWordChar(char: Char) = char.isLetterOrDigit() || char == '_'
     }
 
     /**

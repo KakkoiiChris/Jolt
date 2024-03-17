@@ -66,8 +66,6 @@ sealed interface TokenType {
     enum class Keyword : TokenType {
         LET,
         VAR,
-        IF,
-        ELSE,
     }
 
     /**
@@ -160,16 +158,6 @@ sealed interface TokenType {
          * A right parenthesis « `)` » used for nested expressions.
          */
         RIGHT_PAREN(")"),
-
-        /**
-         * A left brace « `{` » used to open statement bodies.
-         */
-        LEFT_BRACE("{"),
-
-        /**
-         * A right brace « `}` » used to close statement bodies.
-         */
-        RIGHT_BRACE("}"),
 
         /**
          * A semicolon « `;` » used for the ends of statements.
