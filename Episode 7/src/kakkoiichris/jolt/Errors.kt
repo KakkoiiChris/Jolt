@@ -38,5 +38,5 @@ fun joltError(message: String, line: String, context: Context): Nothing {
         append("$UNDERLINE".repeat(context.length))
     }
 
-    throw JoltError(fullErrorMessage.wrapRoundBox())
+    throw JoltError(fullErrorMessage.wrapBox())
 }

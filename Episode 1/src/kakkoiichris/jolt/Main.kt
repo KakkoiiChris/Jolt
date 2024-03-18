@@ -28,7 +28,7 @@ fun main(args: Array<String>) = when (args.size) {
 
     1    -> file(args.first())
 
-    else -> System.err.println("Usage $JOLT jolt [filePath]".wrapDoubleBox())
+    else -> System.err.println("Usage $JOLT jolt [filePath]".wrapBox())
 }
 
 /**
@@ -43,7 +43,7 @@ private fun repl() {
         - Memory is kept between inputs.
         - Tilde clears memory.
         - Empty line exits program.
-    """.trimIndent().wrapDoubleBox() + '\n')
+    """.trimIndent().wrapBox() + '\n')
 
     while (true) {
         print("$JOLT ")
@@ -53,7 +53,7 @@ private fun repl() {
         println()
 
         if (text == "~") {
-            println("$JOLT Memory Cleared!".wrapRoundBox() + "\n")
+            println("$JOLT Memory Cleared!".wrapBox() + "\n")
 
             continue
         }
@@ -93,7 +93,7 @@ private fun exec(source: Source) = try {
         }
     }
 
-    println("$JOLT $value\n\n${duration.inWholeNanoseconds / 1E6}ms".wrapRoundBox() + '\n')
+    println("$JOLT $value\n\n${duration.inWholeNanoseconds / 1E6}ms".wrapBox() + '\n')
 }
 catch (e: JoltError) {
     System.err.println("${e.message}\n")

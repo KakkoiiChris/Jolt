@@ -10,6 +10,8 @@
  ********************************************/
 package kakkoiichris.jolt
 
+import kotlin.math.floor
+
 /**
  * The 'Lightning Bolt' emoji, used in many places in the UI.
  */
@@ -88,4 +90,14 @@ fun String.wrapBox() = buildString {
     }
 
     append("$DOWN_LEFT${HORIZONTAL.toString().repeat(maxWidth + 2)}$DOWN_RIGHT")
+}
+
+fun Double.truncate():String{
+    val floor = floor(this)
+
+    if (floor == this) {
+        return floor.toString()
+    }
+
+    return toString()
 }
