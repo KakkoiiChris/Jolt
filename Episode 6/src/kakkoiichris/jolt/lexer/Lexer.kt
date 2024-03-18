@@ -11,7 +11,6 @@
 package kakkoiichris.jolt.lexer
 
 import kakkoiichris.jolt.JoltError
-import kakkoiichris.jolt.JoltValue
 import kakkoiichris.jolt.Source
 import kakkoiichris.jolt.joltError
 
@@ -28,21 +27,14 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
         private const val NUL = '\u0000'
 
         /**
-         *
-         */
-        private val literals = listOf(true, false)
-            .map { JoltValue.Boolean(it) }
-            .associateBy { it.toString() }
-
-        /**
          * @return `true` if the given character is alphabetic or is an underscore, or `false` otherwise
          */
-        private fun isWordStartChar(char: Char) = char.isLetter() || char == '_'
+        fun isWordStartChar(char: Char) = char.isLetter() || char == '_'
 
         /**
          * @return `true` if the given character is alphanumeric or is an underscore, or `false` otherwise
          */
-        private fun isWordChar(char: Char) = char.isLetterOrDigit() || char == '_'
+        fun isWordChar(char: Char) = char.isLetterOrDigit() || char == '_'
     }
 
     /**
@@ -328,7 +320,7 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
     /**
      * @return A [token][Token] with a [Value][TokenType.Value] token type containing the lexed number
      */
-    private fun number(): Token<TokenType.Value<JoltValue.Number>> {
+    private fun number(): Token<TokenType.Value> {
         val start = here()
 
         val result = buildString {
@@ -347,7 +339,7 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
 
         val context = start..here()
 
-        val type = TokenType.Value(JoltValue.Number(result.toDouble()))
+        val type = TokenType.Value(result.toDouble())
 
         return Token(context, type)
     }
@@ -369,11 +361,7 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
 
         val keyword = TokenType.Keyword.entries.firstOrNull { it.name.equals(result, ignoreCase = true) }
 
-        val literal = literals[result]
-
-        val type = keyword
-            ?: literal?.let { TokenType.Value(it) }
-            ?: TokenType.Name(result)
+        val type = keyword ?: TokenType.Name(result)
 
         return Token(context, type)
     }
@@ -387,51 +375,25 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
         val start = here()
 
         val symbol = when {
-            skip('=')  -> when {
-                skip('=') -> TokenType.Symbol.DOUBLE_EQUAL
+            skip('=') -> TokenType.Symbol.EQUAL
 
-                else      -> TokenType.Symbol.EQUAL
-            }
+            skip('+') -> TokenType.Symbol.PLUS
 
-            skip("||") -> TokenType.Symbol.DOUBLE_PIPE
+            skip('-') -> TokenType.Symbol.DASH
 
-            skip("&&") -> TokenType.Symbol.DOUBLE_AMPERSAND
+            skip('*') -> TokenType.Symbol.STAR
 
-            skip('!')  -> when {
-                skip('=') -> TokenType.Symbol.EXCLAMATION_EQUAL
+            skip('/') -> TokenType.Symbol.SLASH
 
-                else      -> TokenType.Symbol.EXCLAMATION
-            }
+            skip('%') -> TokenType.Symbol.PERCENT
 
-            skip('<')  -> when {
-                skip('=') -> TokenType.Symbol.LESS_EQUAL
+            skip('(') -> TokenType.Symbol.LEFT_PAREN
 
-                else      -> TokenType.Symbol.LESS
-            }
+            skip(')') -> TokenType.Symbol.RIGHT_PAREN
 
-            skip('>')  -> when {
-                skip('=') -> TokenType.Symbol.GREATER_EQUAL
+            skip(';') -> TokenType.Symbol.SEMICOLON
 
-                else      -> TokenType.Symbol.GREATER
-            }
-
-            skip('+')  -> TokenType.Symbol.PLUS
-
-            skip('-')  -> TokenType.Symbol.DASH
-
-            skip('*')  -> TokenType.Symbol.STAR
-
-            skip('/')  -> TokenType.Symbol.SLASH
-
-            skip('%')  -> TokenType.Symbol.PERCENT
-
-            skip('(')  -> TokenType.Symbol.LEFT_PAREN
-
-            skip(')')  -> TokenType.Symbol.RIGHT_PAREN
-
-            skip(';')  -> TokenType.Symbol.SEMICOLON
-
-            else       -> joltError("Illegal character '${peek()}'", source.getLine(start.row), start)
+            else      -> joltError("Illegal character '${peek()}'", source.getLine(start.row), start)
         }
 
         val context = start..here()

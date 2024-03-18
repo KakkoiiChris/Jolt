@@ -24,13 +24,6 @@ data class Context(
     val column: Int,
     val length: Int,
 ) {
-    companion object {
-        /**
-         * A Context instance to be used for Exprs and Stmts that are not generated from code, and therefore do not have a physical location within a file.
-         */
-        val none = Context("", 0, 0, 0)
-    }
-
     /**
      * @param other The end [Context] to encompass
      *
@@ -52,66 +45,39 @@ sealed interface TokenType {
     data class Value(val value: Double) : TokenType
 
     /**
-     * Token type that represents a name or variable.
-     *
-     * @property value The value of the token
-     */
-    data class Name(val value: String) : TokenType
-
-    /**
-     * Token type that represents a keyword.
-     */
-    enum class Keyword : TokenType {
-        LET,
-        VAR,
-    }
-
-    /**
      * Token type that represents a unique single or multiple character symbol.
      *
      * @property rep The string representation of the token
      */
     enum class Symbol(private val rep: String) : TokenType {
         /**
-         * An equals sign « `=` » used for declaration, assignment, default parameters, and named arguments.
-         */
-        EQUAL("="),
-
-        /**
          * A plus sign « `+` » used for addition.
          */
         PLUS("+"),
-
         /**
          * A dash « `-` » used for negation and subtraction.
          */
         DASH("-"),
-
         /**
          * An asterisk « `*` » used for multiplication.
          */
         STAR("*"),
-
         /**
          * A forward slash « `/` » used for division.
          */
         SLASH("/"),
-
         /**
          * A percent sign « `%` » used for remainders.
          */
         PERCENT("%"),
-
         /**
          * A left parenthesis « `(` » used for nested expressions.
          */
         LEFT_PAREN("("),
-
         /**
          * A right parenthesis « `)` » used for nested expressions.
          */
         RIGHT_PAREN(")"),
-
         /**
          * A semicolon « `;` » used for the ends of statements.
          */

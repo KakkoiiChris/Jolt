@@ -10,6 +10,8 @@
  ********************************************/
 package kakkoiichris.jolt.lexer
 
+import kakkoiichris.jolt.JoltValue
+
 /**
  * A container for location data related to tokens.
  *
@@ -49,7 +51,7 @@ sealed interface TokenType {
      *
      * @property value The value of the token
      */
-    data class Value(val value: Double) : TokenType
+    data class Value<X : JoltValue<*>>(val value: X) : TokenType
 
     /**
      * Token type that represents a name or variable.
@@ -78,6 +80,46 @@ sealed interface TokenType {
         EQUAL("="),
 
         /**
+         * A double pipe « `||` » used for logical comparisons.
+         */
+        DOUBLE_PIPE("||"),
+
+        /**
+         * A double ampersand « `&&` » used for logical comparisons.
+         */
+        DOUBLE_AMPERSAND("&&"),
+
+        /**
+         * A double equal sign « `==` » used for equalities.
+         */
+        DOUBLE_EQUAL("=="),
+
+        /**
+         * An exclamation point equal sign « `!=` » used for equalities.
+         */
+        EXCLAMATION_EQUAL("!="),
+
+        /**
+         * A less than sign « `<` » used for comparisons.
+         */
+        LESS("<"),
+
+        /**
+         * A less than or equal sign « `<=` » used for comparisons.
+         */
+        LESS_EQUAL("<="),
+
+        /**
+         * A greater than sign « `>` » used for comparisons.
+         */
+        GREATER(">"),
+
+        /**
+         * A greater than or equal sign « `>=` » used for comparisons.
+         */
+        GREATER_EQUAL(">="),
+
+        /**
          * A plus sign « `+` » used for addition.
          */
         PLUS("+"),
@@ -101,6 +143,11 @@ sealed interface TokenType {
          * A percent sign « `%` » used for remainders.
          */
         PERCENT("%"),
+
+        /**
+         * A percent sign « `!` » used for logical comparisons.
+         */
+        EXCLAMATION("!"),
 
         /**
          * A left parenthesis « `(` » used for nested expressions.

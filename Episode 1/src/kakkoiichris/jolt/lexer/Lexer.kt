@@ -19,7 +19,7 @@ import kakkoiichris.jolt.joltError
  *
  * @property source The code [Source] to convert
  */
-class Lexer(internal val source: Source) : Iterator<Token<*>> {
+class Lexer(private val source: Source) : Iterator<Token<*>> {
     companion object {
         /**
          * The null-terminator character, used to mark the end of the source.
@@ -82,7 +82,11 @@ class Lexer(internal val source: Source) : Iterator<Token<*>> {
             return when {
                 match(Char::isDigit) -> number()
 
-                else                 -> symbol()
+                else                 -> {
+                    val context = here()
+
+                    joltError("Illegal character '${peek()}'", source.getLine(context.row), context)
+                }
             }
         }
 
@@ -321,25 +325,6 @@ class Lexer(internal val source: Source) : Iterator<Token<*>> {
         val type = TokenType.Value(result.toDouble())
 
         return Token(context, type)
-    }
-
-    /**
-     * @return A [token][Token] with a [Symbol][TokenType.Symbol] token [type][TokenType]
-     *
-     * @throws JoltError If an unknown character is encountered
-     */
-    private fun symbol(): Token<TokenType.Symbol> {
-        val start = here()
-
-        val symbol = when {
-            skip(';') -> TokenType.Symbol.SEMICOLON
-
-            else      -> joltError("Illegal character '${peek()}'", source.getLine(start.row), start)
-        }
-
-        val context = start..here()
-
-        return Token(context, symbol)
     }
 
     /**

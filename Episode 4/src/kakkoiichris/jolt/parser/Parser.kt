@@ -58,14 +58,6 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         token.type == type
 
     /**
-     * @param types The token types to match
-     *
-     * @return `true` if any of the token types were matched, or `false` otherwise
-     */
-    private fun matchAny(vararg types: TokenType) =
-        types.any { match(it) }
-
-    /**
      * @param T The token type to match
      *
      * @return `true` if the token type was matched, or `false` otherwise
@@ -169,103 +161,14 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single expression
      */
     private fun expr() =
-        additive()
-
-    /**
-     * @return A single additive binary expression if a '+' or '-' is present
-     */
-    private fun additive(): Expr {
-        var expr = multiplicative()
-
-        while (matchAny(TokenType.Symbol.PLUS, TokenType.Symbol.DASH)) {
-            val (_, type) = get<TokenType.Symbol>()
-
-            val operator = Expr.Binary.Operator[type]
-
-            val right = multiplicative()
-
-            val context = expr.context..here()
-
-            expr = Expr.Binary(context, operator, expr, right)
-        }
-
-        return expr
-    }
-
-    /**
-     * @return A single multiplicative binary expression if a '*', '/',  or '%' is present
-     */
-    private fun multiplicative(): Expr {
-        var expr = prefix()
-
-        while (matchAny(TokenType.Symbol.STAR, TokenType.Symbol.SLASH, TokenType.Symbol.PERCENT)) {
-            val (_, type) = get<TokenType.Symbol>()
-
-            val operator = Expr.Binary.Operator[type]
-
-            val right = prefix()
-
-            val context = expr.context..here()
-
-            expr = Expr.Binary(context, operator, expr, right)
-        }
-
-        return expr
-    }
-
-    /**
-     * @return A single prefix unary expression if a '-' is present
-     */
-    private fun prefix(): Expr {
-        if (match(TokenType.Symbol.DASH)) {
-            val (start, type) = get<TokenType.Symbol>()
-
-            val operator = Expr.Unary.Operator[type]
-
-            val expr = prefix()
-
-            val context = start..here()
-
-            return Expr.Unary(context, operator, expr)
-        }
-
-        return terminal()
-    }
-
-    /**
-     * @return A single terminal expression
-     */
-    private fun terminal() = when {
-        match<TokenType.Value>()           -> value()
-
-        match(TokenType.Symbol.LEFT_PAREN) -> nested()
-
-        else -> joltError("Invalid terminal starting with '${token.type}'", source.getLine(here().row), here())
-    }
+        valueExpr()
 
     /**
      * @return A single value expression
      */
-    private fun value(): Expr.Value {
+    private fun valueExpr(): Expr.Value {
         val (context, type) = get<TokenType.Value>()
 
         return Expr.Value(context, type.value)
-    }
-
-    /**
-     * @return A single nested expression
-     */
-    private fun nested(): Expr.Nested {
-        val start = here()
-
-        mustSkip(TokenType.Symbol.LEFT_PAREN, "BROKEN LEFT PAREN")
-
-        val expr = expr()
-
-        mustSkip(TokenType.Symbol.RIGHT_PAREN, "Expected a right parenthesis")
-
-        val context = start..here()
-
-        return Expr.Nested(context, expr)
     }
 }

@@ -11,6 +11,6 @@
 package kakkoiichris.jolt.parser
 
 /**
- * @property stmts
+ * @property exprs
  */
-class Program(private val stmts: Stmts):Iterator<Stmt> by stmts.iterator()
+class Program(private val exprs: Exprs) : Iterator<Expr> by exprs.iterator()

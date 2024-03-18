@@ -219,102 +219,18 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single assignment expression if an '=' is present
      */
     private fun assignExpr(): Expr {
-        val expr = orExpr()
+        val expr = additiveExpr()
 
         if (match(TokenType.Symbol.EQUAL)) {
             if (expr !is Expr.Name) joltError("Value '$expr' is not assignable", source.getLine(expr.context.row), expr.context)
 
             mustSkip(TokenType.Symbol.EQUAL)
 
-            val value = orExpr()
+            val value = additiveExpr()
 
             val context = expr.context..here()
 
             return Expr.Assign(context, expr, value)
-        }
-
-        return expr
-    }
-
-    /**
-     * @return A single or binary expression if a '||' is present
-     */
-    private fun orExpr(): Expr {
-        var expr = andExpr()
-
-        while (match(TokenType.Symbol.DOUBLE_PIPE)) {
-            val (_, type) = get<TokenType.Symbol>()
-
-            val operator = Expr.Binary.Operator[type]
-
-            val right = andExpr()
-
-            val context = expr.context..here()
-
-            expr = Expr.Binary(context, operator, expr, right)
-        }
-
-        return expr
-    }
-
-    /**
-     * @return A single and binary expression if a '&&' is present
-     */
-    private fun andExpr(): Expr {
-        var expr = equalityExpr()
-
-        while (match(TokenType.Symbol.DOUBLE_AMPERSAND)) {
-            val (_, type) = get<TokenType.Symbol>()
-
-            val operator = Expr.Binary.Operator[type]
-
-            val right = equalityExpr()
-
-            val context = expr.context..here()
-
-            expr = Expr.Binary(context, operator, expr, right)
-        }
-
-        return expr
-    }
-
-    /**
-     * @return A single equality binary expression if a '==' or '!=' is present
-     */
-    private fun equalityExpr(): Expr {
-        var expr = relationalExpr()
-
-        while (matchAny(TokenType.Symbol.DOUBLE_EQUAL, TokenType.Symbol.EXCLAMATION_EQUAL)) {
-            val (_, type) = get<TokenType.Symbol>()
-
-            val operator = Expr.Binary.Operator[type]
-
-            val right = relationalExpr()
-
-            val context = expr.context..here()
-
-            expr = Expr.Binary(context, operator, expr, right)
-        }
-
-        return expr
-    }
-
-    /**
-     * @return A single relational binary expression if a '<', '<=', '>', or '>=' is present
-     */
-    private fun relationalExpr(): Expr {
-        var expr = additiveExpr()
-
-        while (matchAny(TokenType.Symbol.LESS, TokenType.Symbol.LESS_EQUAL, TokenType.Symbol.GREATER, TokenType.Symbol.GREATER_EQUAL)) {
-            val (_, type) = get<TokenType.Symbol>()
-
-            val operator = Expr.Binary.Operator[type]
-
-            val right = additiveExpr()
-
-            val context = expr.context..here()
-
-            expr = Expr.Binary(context, operator, expr, right)
         }
 
         return expr
@@ -366,7 +282,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single prefix unary expression if a '-' is present
      */
     private fun prefixExpr(): Expr {
-        if (matchAny(TokenType.Symbol.DASH, TokenType.Symbol.EXCLAMATION)) {
+        if (match(TokenType.Symbol.DASH)) {
             val (start, type) = get<TokenType.Symbol>()
 
             val operator = Expr.Unary.Operator[type]
@@ -385,7 +301,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single terminal expression
      */
     private fun terminalExpr() = when {
-        match<TokenType.Value<*>>()        -> valueExpr()
+        match<TokenType.Value>()           -> valueExpr()
 
         match<TokenType.Name>()            -> nameExpr()
 
@@ -398,7 +314,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single value expression
      */
     private fun valueExpr(): Expr.Value {
-        val (context, type) = get<TokenType.Value<*>>()
+        val (context, type) = get<TokenType.Value>()
 
         return Expr.Value(context, type.value)
     }

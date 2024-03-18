@@ -11,7 +11,6 @@
 package kakkoiichris.jolt.runtime
 
 import kakkoiichris.jolt.JoltError
-import kakkoiichris.jolt.JoltValue
 import kakkoiichris.jolt.Source
 import kakkoiichris.jolt.joltError
 import kakkoiichris.jolt.parser.Expr
@@ -21,9 +20,9 @@ import kakkoiichris.jolt.parser.Stmt
 /**
  * A class that executes programs by implementing the visitors of both the Expr and Stmt class.
  */
-class Runtime(private val source: Source, private val memory: Memory = Memory()) : Expr.Visitor<JoltValue<*>>, Stmt.Visitor<Unit> {
+class Runtime(private val source: Source, private val memory: Memory = Memory()) : Expr.Visitor<Double>, Stmt.Visitor<Unit> {
     init {
-        memory["\$last"] = Memory.Record(false, JoltValue.Number(0.0))
+        memory["\$last"] = Memory.Record(false, 0.0)
     }
 
     /**
@@ -33,22 +32,22 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
      *
      * @return The value of the last expression
      */
-    fun run(program: Program): JoltValue<*> {
+    fun run(program: Program): Double {
         for (stmt in program) {
             visit(stmt)
         }
 
-        return JoltValue.Number(0.0)
+        return 0.0
     }
 
     /**
      * Visits each of the program's statements in order.
      *
-     * @param expr The expression to evaluate
+     * @param program The program to execute
      *
      * @return The value of the last expression
      */
-    fun runExpr(expr: Expr): JoltValue<*> {
+    fun runExpr(expr: Expr): Double {
         val value = visit(expr)
 
         memory["_"] = Memory.Record(true, value)
@@ -84,32 +83,8 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
      *
      * @return The result of the operator on its operand
      */
-    override fun visitUnaryExpr(expr: Expr.Unary): JoltValue<*> {
-        val (_, operator, operand) = expr
-
-        return when (operator) {
-            Expr.Unary.Operator.NEGATE -> negateOperator(operand)
-
-            Expr.Unary.Operator.NOT    -> notOperator(operand)
-        }
-    }
-
-    /**
-     *
-     */
-    private fun negateOperator(operand: Expr) = when (val o = visit(operand)) {
-        is JoltValue.Number -> JoltValue.Number(-o.value)
-
-        else                -> TODO()
-    }
-
-    /**
-     *
-     */
-    private fun notOperator(operand: Expr) = when (val o = visit(operand)) {
-        is JoltValue.Boolean -> JoltValue.Boolean(!o.value)
-
-        else                 -> TODO()
+    override fun visitUnaryExpr(expr: Expr.Unary) = when (expr.operator) {
+        Expr.Unary.Operator.NEGATE -> -visit(expr.operand)
     }
 
     /**
@@ -117,209 +92,16 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
      *
      * @return The result of the operator on its operands
      */
-    override fun visitBinaryExpr(expr: Expr.Binary): JoltValue<*> {
-        val (_, operator, left, right) = expr
+    override fun visitBinaryExpr(expr: Expr.Binary) = when (expr.operator) {
+        Expr.Binary.Operator.ADD       -> visit(expr.operandLeft) + visit(expr.operandRight)
 
-        return when (operator) {
-            Expr.Binary.Operator.OR            -> orOperator(left, right)
-            Expr.Binary.Operator.AND           -> andOperator(left, right)
-            Expr.Binary.Operator.EQUAL         -> equalOperator(left, right)
-            Expr.Binary.Operator.NOT_EQUAL     -> notEqualOperator(left, right)
-            Expr.Binary.Operator.LESS          -> lessOperator(left, right)
-            Expr.Binary.Operator.LESS_EQUAL    -> lessEqualOperator(left, right)
-            Expr.Binary.Operator.GREATER       -> greaterOperator(left, right)
-            Expr.Binary.Operator.GREATER_EQUAL -> greaterEqualOperator(left, right)
-            Expr.Binary.Operator.ADD           -> addOperator(left, right)
-            Expr.Binary.Operator.SUBTRACT      -> subtractOperator(left, right)
-            Expr.Binary.Operator.MULTIPLY      -> multiplyOperator(left, right)
-            Expr.Binary.Operator.DIVIDE        -> divideOperator(left, right)
-            Expr.Binary.Operator.REMAINDER     -> remainderOperator(left, right)
-        }
-    }
+        Expr.Binary.Operator.SUBTRACT  -> visit(expr.operandLeft) - visit(expr.operandRight)
 
-    /**
-     *
-     */
-    private fun orOperator(left: Expr, right: Expr): JoltValue<Boolean> {
-        val l = visit(left) as? JoltValue.Boolean ?: TODO()
+        Expr.Binary.Operator.MULTIPLY  -> visit(expr.operandLeft) * visit(expr.operandRight)
 
-        if (l.value) {
-            return JoltValue.Boolean(true)
-        }
+        Expr.Binary.Operator.DIVIDE    -> visit(expr.operandLeft) / visit(expr.operandRight)
 
-        val r = visit(right) as? JoltValue.Boolean ?: TODO()
-
-        return r
-    }
-
-    /**
-     *
-     */
-    private fun andOperator(left: Expr, right: Expr): JoltValue<Boolean> {
-        val l = visit(left) as? JoltValue.Boolean ?: TODO()
-
-        if (!l.value) {
-            return JoltValue.Boolean(false)
-        }
-
-        val r = visit(right) as? JoltValue.Boolean ?: TODO()
-
-        return r
-    }
-
-    /**
-     *
-     */
-    private fun equalOperator(left: Expr, right: Expr) = when (val l = visit(left)) {
-        is JoltValue.Boolean -> when (val r = visit(right)) {
-            is JoltValue.Boolean -> JoltValue.Boolean(l.value == r.value)
-
-            else                 -> TODO()
-        }
-
-        is JoltValue.Number  -> when (val r = visit(right)) {
-            is JoltValue.Number -> JoltValue.Boolean(l.value == r.value)
-
-            else                -> TODO()
-        }
-
-        else                 -> TODO()
-    }
-
-    /**
-     *
-     */
-    private fun notEqualOperator(left: Expr, right: Expr) = when (val l = visit(left)) {
-        is JoltValue.Boolean -> when (val r = visit(right)) {
-            is JoltValue.Boolean -> JoltValue.Boolean(l.value != r.value)
-
-            else                 -> TODO()
-        }
-
-        is JoltValue.Number  -> when (val r = visit(right)) {
-            is JoltValue.Number -> JoltValue.Boolean(l.value != r.value)
-
-            else                -> TODO()
-        }
-
-        else                 -> TODO()
-    }
-
-    /**
-     *
-     */
-    private fun lessOperator(left: Expr, right: Expr) = when (val l = visit(left)) {
-        is JoltValue.Number -> when (val r = visit(right)) {
-            is JoltValue.Number -> JoltValue.Boolean(l.value < r.value)
-
-            else                -> TODO()
-        }
-
-        else                -> TODO()
-    }
-
-    /**
-     *
-     */
-    private fun lessEqualOperator(left: Expr, right: Expr) = when (val l = visit(left)) {
-        is JoltValue.Number -> when (val r = visit(right)) {
-            is JoltValue.Number -> JoltValue.Boolean(l.value <= r.value)
-
-            else                -> TODO()
-        }
-
-        else                -> TODO()
-    }
-
-    /**
-     *
-     */
-    private fun greaterOperator(left: Expr, right: Expr) = when (val l = visit(left)) {
-        is JoltValue.Number -> when (val r = visit(right)) {
-            is JoltValue.Number -> JoltValue.Boolean(l.value > r.value)
-
-            else                -> TODO()
-        }
-
-        else                -> TODO()
-    }
-
-    /**
-     *
-     */
-    private fun greaterEqualOperator(left: Expr, right: Expr) = when (val l = visit(left)) {
-        is JoltValue.Number -> when (val r = visit(right)) {
-            is JoltValue.Number -> JoltValue.Boolean(l.value >= r.value)
-
-            else                -> TODO()
-        }
-
-        else                -> TODO()
-    }
-
-    /**
-     *
-     */
-    private fun addOperator(left: Expr, right: Expr) = when (val l = visit(left)) {
-        is JoltValue.Number -> when (val r = visit(right)) {
-            is JoltValue.Number -> JoltValue.Number(l.value + r.value)
-
-            else                -> TODO()
-        }
-
-        else                -> TODO()
-    }
-
-    /**
-     *
-     */
-    private fun subtractOperator(left: Expr, right: Expr) = when (val l = visit(left)) {
-        is JoltValue.Number -> when (val r = visit(right)) {
-            is JoltValue.Number -> JoltValue.Number(l.value - r.value)
-
-            else                -> TODO()
-        }
-
-        else                -> TODO()
-    }
-
-    /**
-     *
-     */
-    private fun multiplyOperator(left: Expr, right: Expr) = when (val l = visit(left)) {
-        is JoltValue.Number -> when (val r = visit(right)) {
-            is JoltValue.Number -> JoltValue.Number(l.value * r.value)
-
-            else                -> TODO()
-        }
-
-        else                -> TODO()
-    }
-
-    /**
-     *
-     */
-    private fun divideOperator(left: Expr, right: Expr) = when (val l = visit(left)) {
-        is JoltValue.Number -> when (val r = visit(right)) {
-            is JoltValue.Number -> JoltValue.Number(l.value / r.value)
-
-            else                -> TODO()
-        }
-
-        else                -> TODO()
-    }
-
-    /**
-     *
-     */
-    private fun remainderOperator(left: Expr, right: Expr) = when (val l = visit(left)) {
-        is JoltValue.Number -> when (val r = visit(right)) {
-            is JoltValue.Number -> JoltValue.Number(l.value % r.value)
-
-            else                -> TODO()
-        }
-
-        else                -> TODO()
+        Expr.Binary.Operator.REMAINDER -> visit(expr.operandLeft) % visit(expr.operandRight)
     }
 
     /**
@@ -329,19 +111,17 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
      *
      * @throws JoltError If the variable name is not present in memory, or if the variable is constant
      */
-    override fun visitAssignExpr(expr: Expr.Assign): JoltValue<*> {
-        val (_, name, value) = expr
+    override fun visitAssignExpr(expr: Expr.Assign): Double {
+        val record = memory[expr.name.value]
+            ?: joltError("Variable '${expr.name.value}' is undeclared", source.getLine(expr.name.context.row), expr.name.context)
 
-        val record = memory[name.value]
-            ?: joltError("Variable '${name.value}' is undeclared", source.getLine(name.context.row), name.context)
+        if (record.constant) joltError("Cannot assign to constant '${expr.name.value}'", source.getLine(expr.name.context.row), expr.name.context)
 
-        if (record.constant) joltError("Cannot assign to constant '${name.value}'", source.getLine(name.context.row), name.context)
+        val value = visit(expr.value)
 
-        val v = visit(value)
+        record.value = value
 
-        record.value = v
-
-        return v
+        return value
     }
 
     /**

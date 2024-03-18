@@ -12,8 +12,11 @@ package kakkoiichris.jolt
 
 import kakkoiichris.jolt.lexer.Lexer
 import kakkoiichris.jolt.parser.Parser
+import kakkoiichris.jolt.runtime.Memory
 import kakkoiichris.jolt.runtime.Runtime
 import java.nio.file.Paths
+import kotlin.time.Duration
+import kotlin.time.TimedValue
 import kotlin.time.measureTimedValue
 
 /**
@@ -47,6 +50,8 @@ private fun repl() {
         - Empty line exits program.
     """.trimIndent().wrapDoubleBox() + '\n')
 
+    val memory = Memory()
+
     while (true) {
         print("$JOLT ")
 
@@ -55,6 +60,8 @@ private fun repl() {
         println()
 
         if (text == "~") {
+            memory.clear()
+
             println("$JOLT Memory Cleared!".wrapRoundBox() + "\n")
 
             continue
@@ -62,7 +69,43 @@ private fun repl() {
 
         val source = Source("<REPL>", text)
 
-        exec(source)
+        val lexer = Lexer(source)
+
+        val parser = Parser(source, lexer)
+
+        val (value, duration) = try {
+            measureTimedValue {
+                val program = parser.parse()
+
+                val runtime = Runtime(source, memory)
+
+                runtime.run(program)
+            }
+        }
+        catch (e: JoltError) {
+            try {
+                measureTimedValue {
+                    parser.reset()
+
+                    val expr = parser.parseExpr()
+
+                    val runtime = Runtime(source, memory)
+
+                    runtime.runExpr(expr)
+                }
+            }
+            catch (e: JoltError) {
+                System.err.println("${e.message}\n")
+
+                Thread.sleep(20)
+
+                TimedValue(0.0, Duration.ZERO)
+            }
+        }
+
+        if (duration != Duration.ZERO) {
+            println("$JOLT $value\n\n${duration.inWholeNanoseconds / 1E6}ms".wrapRoundBox() + '\n')
+        }
     }
 }
 
@@ -76,18 +119,7 @@ private fun file(filePath: String) {
 
     val source = Source.of(path)
 
-    exec(source)
-}
-
-/**
- * Times the execution of the specified source, and prints the result and time to the screen.
- *
- * @param source The source code to execute
- */
-private fun exec(source: Source) = try {
-    val (value, duration) = measureTimedValue {
-        println("Executing '${source.text}' from '${source.name}'!")
-
+    try {
         val lexer = Lexer(source)
 
         val parser = Parser(source, lexer)
@@ -98,11 +130,9 @@ private fun exec(source: Source) = try {
 
         runtime.run(program)
     }
+    catch (e: JoltError) {
+        System.err.println("${e.message}\n")
 
-    println("$JOLT $value\n\n${duration.inWholeNanoseconds / 1E6}ms".wrapRoundBox() + '\n')
-}
-catch (e: JoltError) {
-    System.err.println("${e.message}\n")
-
-    Thread.sleep(20)
+        Thread.sleep(20)
+    }
 }

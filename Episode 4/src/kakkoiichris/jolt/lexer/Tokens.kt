@@ -30,7 +30,7 @@ data class Context(
      * @return A new [Context] instance spanning from this token to the other token
      */
     operator fun rangeTo(other: Context) =
-        Context(name, row, column, (other.column - column) + other.length - 1)
+        Context(name, row, column, other.column - column + 1)
 }
 
 /**
@@ -51,35 +51,9 @@ sealed interface TokenType {
      */
     enum class Symbol(private val rep: String) : TokenType {
         /**
-         * A plus sign « `+` » used for addition.
-         */
-        PLUS("+"),
-        /**
-         * A dash « `-` » used for negation and subtraction.
-         */
-        DASH("-"),
-        /**
-         * An asterisk « `*` » used for multiplication.
-         */
-        STAR("*"),
-        /**
-         * A forward slash « `/` » used for division.
-         */
-        SLASH("/"),
-        /**
-         * A percent sign « `%` » used for remainders.
-         */
-        PERCENT("%"),
-        /**
-         * A left parenthesis « `(` » used for nested expressions.
-         */
-        LEFT_PAREN("("),
-        /**
-         * A right parenthesis « `)` » used for nested expressions.
-         */
-        RIGHT_PAREN(")"),
-        /**
-         * A semicolon « `;` » used for the ends of statements.
+         * A semicolon used for the end of statements.
+         *
+         * « `;` »
          */
         SEMICOLON(";");
 

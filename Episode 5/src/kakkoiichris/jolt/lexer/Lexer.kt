@@ -25,16 +25,6 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
          * The null-terminator character, used to mark the end of the source.
          */
         private const val NUL = '\u0000'
-
-        /**
-         * @return `true` if the given character is alphabetic or is an underscore, or `false` otherwise
-         */
-        fun isWordStartChar(char: Char) = char.isLetter() || char == '_'
-
-        /**
-         * @return `true` if the given character is alphanumeric or is an underscore, or `false` otherwise
-         */
-        fun isWordChar(char: Char) = char.isLetterOrDigit() || char == '_'
     }
 
     /**
@@ -88,26 +78,15 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
                 continue
             }
 
-            // Text to turn into tokens...
+            // Text to turn into tokens
             return when {
-                match(Char::isDigit)     -> number()
+                match(Char::isDigit) -> number()
 
-                match(::isWordStartChar) -> word()
-
-                else                     -> symbol()
+                else                 -> symbol()
             }
         }
 
         return endOfFile()
-    }
-
-    /**
-     * Sets the counters to their initial positions so the lexer can be used again.
-     */
-    fun reset() {
-        pos = 0
-        row = 1
-        column = 1
     }
 
     /**
@@ -318,7 +297,7 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
     }
 
     /**
-     * @return A [token][Token] with a [Value][TokenType.Value] token type containing the lexed number
+     * @return A [token][Token] with a [Value][TokenType.Value] token [type][TokenType] containing the lexed number
      */
     private fun number(): Token<TokenType.Value> {
         val start = here()
@@ -345,28 +324,6 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
     }
 
     /**
-     * @return A [token][Token] with a [Keyword][TokenType.Keyword] token type if the lexed word is a valid keyword, or a [Name][TokenType.Name] token type otherwise
-     */
-    private fun word(): Token<*> {
-        val start = here()
-
-        val result = buildString {
-            do {
-                take()
-            }
-            while (match(::isWordChar))
-        }
-
-        val context = start..here()
-
-        val keyword = TokenType.Keyword.entries.firstOrNull { it.name.equals(result, ignoreCase = true) }
-
-        val type = keyword ?: TokenType.Name(result)
-
-        return Token(context, type)
-    }
-
-    /**
      * @return A [token][Token] with a [Symbol][TokenType.Symbol] token [type][TokenType]
      *
      * @throws JoltError If an unknown character is encountered
@@ -375,8 +332,6 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
         val start = here()
 
         val symbol = when {
-            skip('=') -> TokenType.Symbol.EQUAL
-
             skip('+') -> TokenType.Symbol.PLUS
 
             skip('-') -> TokenType.Symbol.DASH

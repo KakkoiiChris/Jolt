@@ -10,6 +10,8 @@
  ********************************************/
 package kakkoiichris.jolt.runtime
 
+import kakkoiichris.jolt.JoltValue
+
 /**
  * Centralized storage for all declared variables.
  */
@@ -49,5 +51,5 @@ class Memory {
      * @property constant If the variable was declared as constant
      * @property value The value of ths variable
      */
-    data class Record(val constant: Boolean, var value: Double)
+    data class Record(val constant: Boolean, var value: JoltValue<*>)
 }

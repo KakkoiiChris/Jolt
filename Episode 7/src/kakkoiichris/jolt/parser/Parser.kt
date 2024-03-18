@@ -44,6 +44,23 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
+     * Parses a single expression.
+     *
+     * @return A single expression
+     */
+    fun parseExpr() =
+        expr()
+
+    /**
+     * Resets this parser's lexer, and starts the parser over from the beginning.
+     */
+    fun reset() {
+        lexer.reset()
+
+        token = lexer.next()
+    }
+
+    /**
      * @return The context of the current [token]
      */
     private fun here() =
@@ -104,7 +121,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      *
      * @throws JoltError If the token is not skipped
      */
-    private fun mustSkip(type: TokenType, errorMessage: String) {
+    private fun mustSkip(type: TokenType, errorMessage: String = "PARSER_CORRUPTED") {
         if (!skip(type)) {
             val context = here()
 
@@ -136,9 +153,11 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single statement
      */
     private fun stmt() = when {
-        match(TokenType.Symbol.SEMICOLON) -> emptyStmt()
+        match(TokenType.Symbol.SEMICOLON)                      -> emptyStmt()
 
-        else                              -> expressionStmt()
+        matchAny(TokenType.Keyword.LET, TokenType.Keyword.VAR) -> declarationStmt()
+
+        else                                                   -> expressionStmt()
     }
 
     /**
@@ -147,9 +166,34 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun emptyStmt(): Stmt.Empty {
         val context = here()
 
-        mustSkip(TokenType.Symbol.SEMICOLON, "Expected a semicolon")
+        mustSkip(TokenType.Symbol.SEMICOLON)
 
         return Stmt.Empty(context)
+    }
+
+    /**
+     * @return A single empty statement
+     */
+    private fun declarationStmt(): Stmt.Declaration {
+        val context = here()
+
+        val constant = skip(TokenType.Keyword.LET)
+
+        if (!constant) {
+            mustSkip(TokenType.Keyword.VAR)
+        }
+
+        val name = nameExpr()
+
+        var expr: Expr = Double.NaN.toValue(here())
+
+        if (skip(TokenType.Symbol.EQUAL)) {
+            expr = expr()
+        }
+
+        mustSkip(TokenType.Symbol.SEMICOLON, "Expected a semicolon")
+
+        return Stmt.Declaration(context, constant, name, expr)
     }
 
     /**
@@ -169,20 +213,125 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single expression
      */
     private fun expr() =
-        additive()
+        assignExpr()
+
+    /**
+     * @return A single assignment expression if an '=' is present
+     */
+    private fun assignExpr(): Expr {
+        val expr = orExpr()
+
+        if (match(TokenType.Symbol.EQUAL)) {
+            if (expr !is Expr.Name) joltError("Value '$expr' is not assignable", source.getLine(expr.context.row), expr.context)
+
+            mustSkip(TokenType.Symbol.EQUAL)
+
+            val value = orExpr()
+
+            val context = expr.context..here()
+
+            return Expr.Assign(context, expr, value)
+        }
+
+        return expr
+    }
+
+    /**
+     * @return A single or binary expression if a '||' is present
+     */
+    private fun orExpr(): Expr {
+        var expr = andExpr()
+
+        while (match(TokenType.Symbol.DOUBLE_PIPE)) {
+            val (_, type) = get<TokenType.Symbol>()
+
+            val operator = Expr.Binary.Operator[type]
+
+            val right = andExpr()
+
+            val context = expr.context..here()
+
+            expr = Expr.Binary(context, operator, expr, right)
+        }
+
+        return expr
+    }
+
+    /**
+     * @return A single and binary expression if a '&&' is present
+     */
+    private fun andExpr(): Expr {
+        var expr = equalityExpr()
+
+        while (match(TokenType.Symbol.DOUBLE_AMPERSAND)) {
+            val (_, type) = get<TokenType.Symbol>()
+
+            val operator = Expr.Binary.Operator[type]
+
+            val right = equalityExpr()
+
+            val context = expr.context..here()
+
+            expr = Expr.Binary(context, operator, expr, right)
+        }
+
+        return expr
+    }
+
+    /**
+     * @return A single equality binary expression if a '==' or '!=' is present
+     */
+    private fun equalityExpr(): Expr {
+        var expr = relationalExpr()
+
+        while (matchAny(TokenType.Symbol.DOUBLE_EQUAL, TokenType.Symbol.EXCLAMATION_EQUAL)) {
+            val (_, type) = get<TokenType.Symbol>()
+
+            val operator = Expr.Binary.Operator[type]
+
+            val right = relationalExpr()
+
+            val context = expr.context..here()
+
+            expr = Expr.Binary(context, operator, expr, right)
+        }
+
+        return expr
+    }
+
+    /**
+     * @return A single relational binary expression if a '<', '<=', '>', or '>=' is present
+     */
+    private fun relationalExpr(): Expr {
+        var expr = additiveExpr()
+
+        while (matchAny(TokenType.Symbol.LESS, TokenType.Symbol.LESS_EQUAL, TokenType.Symbol.GREATER, TokenType.Symbol.GREATER_EQUAL)) {
+            val (_, type) = get<TokenType.Symbol>()
+
+            val operator = Expr.Binary.Operator[type]
+
+            val right = additiveExpr()
+
+            val context = expr.context..here()
+
+            expr = Expr.Binary(context, operator, expr, right)
+        }
+
+        return expr
+    }
 
     /**
      * @return A single additive binary expression if a '+' or '-' is present
      */
-    private fun additive(): Expr {
-        var expr = multiplicative()
+    private fun additiveExpr(): Expr {
+        var expr = multiplicativeExpr()
 
         while (matchAny(TokenType.Symbol.PLUS, TokenType.Symbol.DASH)) {
             val (_, type) = get<TokenType.Symbol>()
 
             val operator = Expr.Binary.Operator[type]
 
-            val right = multiplicative()
+            val right = multiplicativeExpr()
 
             val context = expr.context..here()
 
@@ -195,15 +344,15 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     /**
      * @return A single multiplicative binary expression if a '*', '/',  or '%' is present
      */
-    private fun multiplicative(): Expr {
-        var expr = prefix()
+    private fun multiplicativeExpr(): Expr {
+        var expr = prefixExpr()
 
         while (matchAny(TokenType.Symbol.STAR, TokenType.Symbol.SLASH, TokenType.Symbol.PERCENT)) {
             val (_, type) = get<TokenType.Symbol>()
 
             val operator = Expr.Binary.Operator[type]
 
-            val right = prefix()
+            val right = prefixExpr()
 
             val context = expr.context..here()
 
@@ -216,46 +365,57 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     /**
      * @return A single prefix unary expression if a '-' is present
      */
-    private fun prefix(): Expr {
-        if (match(TokenType.Symbol.DASH)) {
+    private fun prefixExpr(): Expr {
+        if (matchAny(TokenType.Symbol.DASH, TokenType.Symbol.EXCLAMATION)) {
             val (start, type) = get<TokenType.Symbol>()
 
             val operator = Expr.Unary.Operator[type]
 
-            val expr = prefix()
+            val expr = prefixExpr()
 
             val context = start..here()
 
             return Expr.Unary(context, operator, expr)
         }
 
-        return terminal()
+        return terminalExpr()
     }
 
     /**
      * @return A single terminal expression
      */
-    private fun terminal() = when {
-        match<TokenType.Value>()           -> value()
+    private fun terminalExpr() = when {
+        match<TokenType.Value<*>>()        -> valueExpr()
 
-        match(TokenType.Symbol.LEFT_PAREN) -> nested()
+        match<TokenType.Name>()            -> nameExpr()
 
-        else -> joltError("Invalid terminal starting with '${token.type}'", source.getLine(here().row), here())
+        match(TokenType.Symbol.LEFT_PAREN) -> nestedExpr()
+
+        else                               -> joltError("Invalid terminal starting with '${token.type}'", source.getLine(here().row), here())
     }
 
     /**
      * @return A single value expression
      */
-    private fun value(): Expr.Value {
-        val (context, type) = get<TokenType.Value>()
+    private fun valueExpr(): Expr.Value {
+        val (context, type) = get<TokenType.Value<*>>()
 
         return Expr.Value(context, type.value)
     }
 
     /**
+     * @return A single name expression
+     */
+    private fun nameExpr(): Expr.Name {
+        val (context, type) = get<TokenType.Name>()
+
+        return Expr.Name(context, type.value)
+    }
+
+    /**
      * @return A single nested expression
      */
-    private fun nested(): Expr.Nested {
+    private fun nestedExpr(): Expr.Nested {
         val start = here()
 
         mustSkip(TokenType.Symbol.LEFT_PAREN, "BROKEN LEFT PAREN")

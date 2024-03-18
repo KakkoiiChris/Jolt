@@ -11,6 +11,7 @@
 package kakkoiichris.jolt.lexer
 
 import kakkoiichris.jolt.JoltError
+import kakkoiichris.jolt.JoltValue
 import kakkoiichris.jolt.Source
 import kakkoiichris.jolt.joltError
 
@@ -25,6 +26,23 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
          * The null-terminator character, used to mark the end of the source.
          */
         private const val NUL = '\u0000'
+
+        /**
+         *
+         */
+        private val literals = listOf(true, false)
+            .map { JoltValue.Boolean(it) }
+            .associateBy { it.toString() }
+
+        /**
+         * @return `true` if the given character is alphabetic or is an underscore, or `false` otherwise
+         */
+        private fun isWordStartChar(char: Char) = char.isLetter() || char == '_'
+
+        /**
+         * @return `true` if the given character is alphanumeric or is an underscore, or `false` otherwise
+         */
+        private fun isWordChar(char: Char) = char.isLetterOrDigit() || char == '_'
     }
 
     /**
@@ -78,15 +96,26 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
                 continue
             }
 
-            // Text to turn into tokens
+            // Text to turn into tokens...
             return when {
-                match(Char::isDigit) -> number()
+                match(Char::isDigit)     -> number()
 
-                else                 -> symbol()
+                match(::isWordStartChar) -> word()
+
+                else                     -> symbol()
             }
         }
 
         return endOfFile()
+    }
+
+    /**
+     * Sets the counters to their initial positions so the lexer can be used again.
+     */
+    fun reset() {
+        pos = 0
+        row = 1
+        column = 1
     }
 
     /**
@@ -297,33 +326,54 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
     }
 
     /**
-     * @return A [token][Token] with a [Value][TokenType.Value] token [type][TokenType] containing the lexed number
+     * @return A [token][Token] with a [Value][TokenType.Value] token type containing the lexed number
      */
-    private fun number(): Token<TokenType.Value> {
+    private fun number(): Token<TokenType.Value<JoltValue.Number>> {
         val start = here()
-        var end: Context
 
         val result = buildString {
             do {
-                end = here()
-
                 take()
             }
             while (match(Char::isDigit))
 
             if (match('.')) {
                 do {
-                    end = here()
-
                     take()
                 }
                 while (match(Char::isDigit))
             }
         }
 
-        val context = start..end
+        val context = start..here()
 
-        val type = TokenType.Value(result.toDouble())
+        val type = TokenType.Value(JoltValue.Number(result.toDouble()))
+
+        return Token(context, type)
+    }
+
+    /**
+     * @return A [token][Token] with a [Keyword][TokenType.Keyword] token type if the lexed word is a valid keyword, or a [Name][TokenType.Name] token type otherwise
+     */
+    private fun word(): Token<*> {
+        val start = here()
+
+        val result = buildString {
+            do {
+                take()
+            }
+            while (match(::isWordChar))
+        }
+
+        val context = start..here()
+
+        val keyword = TokenType.Keyword.entries.firstOrNull { it.name.equals(result, ignoreCase = true) }
+
+        val literal = literals[result]
+
+        val type = keyword
+            ?: literal?.let { TokenType.Value(it) }
+            ?: TokenType.Name(result)
 
         return Token(context, type)
     }
@@ -337,9 +387,51 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
         val start = here()
 
         val symbol = when {
-            skip(';') -> TokenType.Symbol.SEMICOLON
+            skip('=')  -> when {
+                skip('=') -> TokenType.Symbol.DOUBLE_EQUAL
 
-            else      -> joltError("Illegal character '${peek()}'", source.getLine(start.row), start)
+                else      -> TokenType.Symbol.EQUAL
+            }
+
+            skip("||") -> TokenType.Symbol.DOUBLE_PIPE
+
+            skip("&&") -> TokenType.Symbol.DOUBLE_AMPERSAND
+
+            skip('!')  -> when {
+                skip('=') -> TokenType.Symbol.EXCLAMATION_EQUAL
+
+                else      -> TokenType.Symbol.EXCLAMATION
+            }
+
+            skip('<')  -> when {
+                skip('=') -> TokenType.Symbol.LESS_EQUAL
+
+                else      -> TokenType.Symbol.LESS
+            }
+
+            skip('>')  -> when {
+                skip('=') -> TokenType.Symbol.GREATER_EQUAL
+
+                else      -> TokenType.Symbol.GREATER
+            }
+
+            skip('+')  -> TokenType.Symbol.PLUS
+
+            skip('-')  -> TokenType.Symbol.DASH
+
+            skip('*')  -> TokenType.Symbol.STAR
+
+            skip('/')  -> TokenType.Symbol.SLASH
+
+            skip('%')  -> TokenType.Symbol.PERCENT
+
+            skip('(')  -> TokenType.Symbol.LEFT_PAREN
+
+            skip(')')  -> TokenType.Symbol.RIGHT_PAREN
+
+            skip(';')  -> TokenType.Symbol.SEMICOLON
+
+            else       -> joltError("Illegal character '${peek()}'", source.getLine(start.row), start)
         }
 
         val context = start..here()

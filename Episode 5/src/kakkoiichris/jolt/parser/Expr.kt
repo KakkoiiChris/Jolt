@@ -46,16 +46,6 @@ sealed interface Expr {
     }
 
     /**
-     * Represents a single name expression.
-     *
-     * @property value The name of this expression
-     */
-    data class Name(override val context: Context, val value: String) : Expr {
-        override fun <X> accept(visitor: Visitor<X>): X =
-            visitor.visitNameExpr(this)
-    }
-
-    /**
      * Represents a single nested value expression.
      *
      * @property expr The value of this expression
@@ -149,17 +139,6 @@ sealed interface Expr {
     }
 
     /**
-     * Represents a single assignment operator expression.
-     *
-     * @property name The variable name to assign to
-     * @property value The value to assign
-     */
-    data class Assign(override val context: Context, val name: Name, val value: Expr) : Expr {
-        override fun <X> accept(visitor: Visitor<X>): X =
-            visitor.visitAssignExpr(this)
-    }
-
-    /**
      * An interface that facilitates walking the expression tree.
      *
      * @param X The type of values to be produced by this visitor
@@ -181,13 +160,6 @@ sealed interface Expr {
         fun visitValueExpr(expr: Value): X
 
         /**
-         * Visits a name expression.
-         *
-         * @param expr The statement to visit
-         */
-        fun visitNameExpr(expr: Name): X
-
-        /**
          * Visits a nested expression.
          *
          * @param expr The statement to visit
@@ -207,24 +179,5 @@ sealed interface Expr {
          * @param expr The statement to visit
          */
         fun visitBinaryExpr(expr: Binary): X
-
-        /**
-         * Visits a value expression.
-         *
-         * @param expr The statement to visit
-         */
-        fun visitAssignExpr(expr: Assign): X
     }
 }
-
-/**
- * Helper method to wrap the number into a value expression.
- *
- * @receiver The value to wrap
- *
- * @param context The [Context] to give the new expression
- *
- * @return A [Value][Expr.Value] expression
- */
-fun Double.toValue(context: Context = Context.none) =
-    Expr.Value(context, this)

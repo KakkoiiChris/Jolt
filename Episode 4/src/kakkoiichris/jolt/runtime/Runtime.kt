@@ -38,39 +38,6 @@ class Runtime(private val source: Source) : Expr.Visitor<Double>, Stmt.Visitor<U
     override fun visitValueExpr(expr: Expr.Value) = expr.value
 
     /**
-     * @param expr The expression to visit
-     *
-     * @return The result of the inner expression
-     */
-    override fun visitNestedExpr(expr: Expr.Nested) = visit(expr.expr)
-
-    /**
-     * @param expr The expression to visit
-     *
-     * @return The result of the operator on its operand
-     */
-    override fun visitUnaryExpr(expr: Expr.Unary) = when (expr.operator) {
-        Expr.Unary.Operator.NEGATE -> -visit(expr.operand)
-    }
-
-    /**
-     * @param expr The expression to visit
-     *
-     * @return The result of the operator on its operands
-     */
-    override fun visitBinaryExpr(expr: Expr.Binary) = when (expr.operator) {
-        Expr.Binary.Operator.ADD       -> visit(expr.operandLeft) + visit(expr.operandRight)
-
-        Expr.Binary.Operator.SUBTRACT  -> visit(expr.operandLeft) - visit(expr.operandRight)
-
-        Expr.Binary.Operator.MULTIPLY  -> visit(expr.operandLeft) * visit(expr.operandRight)
-
-        Expr.Binary.Operator.DIVIDE    -> visit(expr.operandLeft) / visit(expr.operandRight)
-
-        Expr.Binary.Operator.REMAINDER -> visit(expr.operandLeft) % visit(expr.operandRight)
-    }
-
-    /**
      * Does nothing.
      *
      * @param stmt The statement to visit
@@ -85,7 +52,6 @@ class Runtime(private val source: Source) : Expr.Visitor<Double>, Stmt.Visitor<U
     override fun visitExpressionStmt(stmt: Stmt.Expression) {
         last = visit(stmt.expr)
 
-        // TODO: Example Interpreter Error
         if (last == 42.0) {
             joltError("The meaning of life", source.getLine(stmt.expr.context.row), stmt.expr.context)
         }
