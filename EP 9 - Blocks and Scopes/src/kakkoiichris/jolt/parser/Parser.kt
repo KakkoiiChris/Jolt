@@ -157,6 +157,8 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         matchAny(TokenType.Keyword.LET, TokenType.Keyword.VAR) -> declarationStmt()
 
+        match(TokenType.Symbol.LEFT_BRACE)                     -> blockStmt()
+
         match(TokenType.Keyword.IF)                            -> ifStmt()
 
         else                                                   -> expressionStmt()
@@ -196,6 +198,20 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         mustSkip(TokenType.Symbol.SEMICOLON, "Expected a semicolon")
 
         return Stmt.Declaration(context, constant, name, expr)
+    }
+
+    private fun blockStmt(): Stmt.Block {
+        val context = here()
+
+        mustSkip(TokenType.Symbol.LEFT_BRACE)
+
+        val stmts = mutableListOf<Stmt>()
+
+        while (!skip(TokenType.Symbol.RIGHT_BRACE)) {
+            stmts += stmt()
+        }
+
+        return Stmt.Block(context, stmts)
     }
 
     private fun ifStmt(): Stmt.If {

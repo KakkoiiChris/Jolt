@@ -10,10 +10,7 @@
  ********************************************/
 package kakkoiichris.jolt.runtime
 
-import kakkoiichris.jolt.JoltError
-import kakkoiichris.jolt.JoltValue
-import kakkoiichris.jolt.Source
-import kakkoiichris.jolt.joltError
+import kakkoiichris.jolt.*
 import kakkoiichris.jolt.parser.Expr
 import kakkoiichris.jolt.parser.Program
 import kakkoiichris.jolt.parser.Stmt
@@ -357,11 +354,27 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
     override fun visitDeclarationStmt(stmt: Stmt.Declaration) {
         val (_, constant, name, expr) = stmt
 
-        if (memory[name.value] != null) joltError("Variable '${name.value}' is already declared", source.getLine(name.context.row), name.context)
+        val record = memory.new(name.value, constant)
+            ?: joltError("Variable '${name.value}' is already declared", source.getLine(name.context.row), name.context)
 
         val value = visit(expr)
 
-        memory[name.value] = Memory.Record(constant, value)
+        record.value = value
+    }
+
+    override fun visitBlockStmt(stmt: Stmt.Block) {
+        val (_, stmts) = stmt
+
+        try {
+            memory.push()
+
+            for (subStmt in stmts) {
+                visit(subStmt)
+            }
+        }
+        finally {
+            memory.pop()
+        }
     }
 
     override fun visitIfStmt(stmt: Stmt.If) {
@@ -387,6 +400,8 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
      * @param stmt The statement to visit
      */
     override fun visitExpressionStmt(stmt: Stmt.Expression) {
-        visit(stmt.expr)
+        val value = visit(stmt.expr)
+
+        println("$JOLT <$value>")
     }
 }

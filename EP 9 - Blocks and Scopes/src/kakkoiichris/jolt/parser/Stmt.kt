@@ -53,6 +53,14 @@ sealed interface Stmt {
     /**
      * Represents an empty statement that does nothing.
      */
+    data class Block(override val context: Context, val stmts: Stmts) : Stmt {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitBlockStmt(this)
+    }
+
+    /**
+     * Represents an empty statement that does nothing.
+     */
     data class If(override val context: Context, val condition: Expr, val body: Stmt, val `else`: Stmt?) : Stmt {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitIfStmt(this)
@@ -95,6 +103,13 @@ sealed interface Stmt {
          * @param stmt The statement to visit
          */
         fun visitDeclarationStmt(stmt: Declaration): X
+
+        /**
+         * Visits an if-else statement.
+         *
+         * @param stmt The statement to visit
+         */
+        fun visitBlockStmt(stmt: Block): X
 
         /**
          * Visits an if-else statement.
