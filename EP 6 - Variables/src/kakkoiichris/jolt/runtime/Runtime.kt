@@ -43,7 +43,7 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
     /**
      * Visits each of the program's statements in order.
      *
-     * @param program The program to execute
+     * @param expr The program to execute
      *
      * @return The value of the last expression
      */

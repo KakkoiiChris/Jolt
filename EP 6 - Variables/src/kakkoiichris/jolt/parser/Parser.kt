@@ -301,7 +301,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single terminal expression
      */
     private fun terminalExpr() = when {
-        match<TokenType.Value>()           -> valueExpr()
+        match<TokenType.Value<*>>()           -> valueExpr()
 
         match<TokenType.Name>()            -> nameExpr()
 
@@ -314,7 +314,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single value expression
      */
     private fun valueExpr(): Expr.Value {
-        val (context, type) = get<TokenType.Value>()
+        val (context, type) = get<TokenType.Value<*>>()
 
         return Expr.Value(context, type.value)
     }
