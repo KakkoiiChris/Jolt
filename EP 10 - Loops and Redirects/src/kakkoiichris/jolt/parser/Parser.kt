@@ -161,6 +161,16 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         match(TokenType.Keyword.IF)                            -> ifStmt()
 
+        match(TokenType.Keyword.LOOP)                          -> loopStmt()
+
+        match(TokenType.Keyword.WHILE)                         -> whileStmt()
+
+        match(TokenType.Keyword.DO)                            -> doStmt()
+
+        match(TokenType.Keyword.BREAK)                         -> breakStmt()
+
+        match(TokenType.Keyword.CONTINUE)                      -> continueStmt()
+
         else                                                   -> expressionStmt()
     }
 
@@ -238,6 +248,104 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         val `else` = if (skip(TokenType.Keyword.ELSE)) stmt() else null
 
         return Stmt.If(context, condition, body, `else`)
+    }
+
+    private fun loopLabel() =
+        if (skip(TokenType.Symbol.AT))
+            nameExpr()
+        else
+            null
+
+    private fun loopStmt(): Stmt.Loop {
+        val start = here()
+
+        mustSkip(TokenType.Keyword.LOOP)
+
+        val label = loopLabel()
+
+        val context = start..here()
+
+        val body = stmt()
+
+        return Stmt.Loop(context, label, body)
+    }
+
+    private fun whileStmt(): Stmt.While {
+        val start = here()
+
+        mustSkip(TokenType.Keyword.WHILE)
+
+        mustSkip(TokenType.Symbol.LEFT_PAREN, "Condition must start with parentheses")
+
+        val condition = expr()
+
+        mustSkip(TokenType.Symbol.RIGHT_PAREN, "Condition must end with parentheses")
+
+        val label = loopLabel()
+
+        val context = start..here()
+
+        val body = stmt()
+
+        return Stmt.While(context, label, condition, body)
+    }
+
+    private fun doStmt(): Stmt.Do {
+        val start = here()
+
+        mustSkip(TokenType.Keyword.DO)
+
+        val label = loopLabel()
+
+        val context = start..here()
+
+        val body = stmt()
+
+        mustSkip(TokenType.Keyword.WHILE, "Expected 'while' after do-while loop body")
+
+        mustSkip(TokenType.Symbol.LEFT_PAREN, "Condition must start with parentheses")
+
+        val condition = expr()
+
+        mustSkip(TokenType.Symbol.RIGHT_PAREN, "Condition must end with parentheses")
+
+        mustSkip(TokenType.Symbol.SEMICOLON, "Expected a semicolon at the end of the do-while loop")
+
+        return Stmt.Do(context, label, body, condition)
+    }
+
+    private fun redirectLabel() =
+        if (!match(TokenType.Symbol.SEMICOLON))
+            nameExpr()
+        else
+            null
+
+    private fun breakStmt(): Stmt.Break {
+        val start = here()
+
+        mustSkip(TokenType.Keyword.BREAK)
+
+        val label = redirectLabel()
+
+        val context = start..here()
+
+        mustSkip(TokenType.Symbol.SEMICOLON, "Expected a semicolon")
+
+        return Stmt.Break(context, label)
+    }
+
+    private fun continueStmt(): Stmt.Continue {
+        val start = here()
+
+        mustSkip(TokenType.Keyword.CONTINUE)
+
+        val label = redirectLabel()
+
+        val context = start..here()
+
+        mustSkip(TokenType.Symbol.SEMICOLON, "Expected a semicolon")
+
+        return Stmt.Continue(context, label)
     }
 
     /**
