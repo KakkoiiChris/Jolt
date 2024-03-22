@@ -13,15 +13,15 @@
 12 - Interpolation
 13 - Size & Indexing
 14 - For Loops
-15 - Destructuring
-16 - Lists
-17 - List Generators
-18 - Type System
-19 - Type Casting
-20 - Functions & Lambdas
-21 - Native Functions
-22 - Imports & Local Files
-23 - Data Structures
+15 - Lists
+16 - List Generators
+17 - Type System
+18 - Type Casting
+19 - Functions & Lambdas
+20 - Native Functions
+21 - Imports & Local Files
+22 - Data Structures
+23 - Destructuring
 24 - Methods
 25 - Traits
 26 - Operator Overloading
