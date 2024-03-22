@@ -120,6 +120,15 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
     }
 
     /**
+     * Sets the counters to their initial positions so the lexer can be used again.
+     */
+    fun reset() {
+        pos = 0
+        row = 1
+        column = 1
+    }
+
+    /**
      * @param length The length of the token
      *
      * @return A new [Context] instance with the location data of the current position within the [Lexer]
@@ -592,6 +601,8 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
 
             skip('%')  -> TokenType.Symbol.PERCENT
 
+            skip('#')  -> TokenType.Symbol.POUND
+
             skip('(')  -> TokenType.Symbol.LEFT_PAREN
 
             skip(')')  -> TokenType.Symbol.RIGHT_PAREN
@@ -599,6 +610,10 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
             skip('{')  -> TokenType.Symbol.LEFT_BRACE
 
             skip('}')  -> TokenType.Symbol.RIGHT_BRACE
+
+            skip('[')  -> TokenType.Symbol.LEFT_SQUARE
+
+            skip(']')  -> TokenType.Symbol.RIGHT_SQUARE
 
             skip('@')  -> TokenType.Symbol.AT
 

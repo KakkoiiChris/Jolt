@@ -90,7 +90,12 @@ sealed interface Expr {
             /**
              * The not operator.
              */
-            NOT(TokenType.Symbol.EXCLAMATION);
+            NOT(TokenType.Symbol.EXCLAMATION),
+
+            /**
+             * The size operator.
+             */
+            SIZE(TokenType.Symbol.POUND);
 
             companion object {
                 /**
@@ -210,6 +215,11 @@ sealed interface Expr {
             visitor.visitInterpolationExpr(this)
     }
 
+    data class GetIndex(override val context: Context, val target: Expr, val index: Expr) : Expr {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitGetIndexExpr(this)
+    }
+
     /**
      * An interface that facilitates walking the expression tree.
      *
@@ -272,6 +282,8 @@ sealed interface Expr {
          * @param expr The expression to visit
          */
         fun visitInterpolationExpr(expr: Interpolation): X
+
+        fun visitGetIndexExpr(expr: GetIndex): X
     }
 }
 

@@ -84,13 +84,15 @@ private fun file(filePath: String) {
  */
 private fun exec(source: Source) = try {
     val (value, duration) = measureTimedValue {
-        println("Executing '${source.text}' from '${source.name}'!")
+        println("Executing '${source.text}' from '${source.name}'!\n")
 
         val lexer = Lexer(source)
 
         for (token in lexer) {
             println(token)
         }
+
+        println()
     }
 
     println("$JOLT $value\n\n${duration.inWholeNanoseconds / 1E6}ms".wrapBox() + '\n')

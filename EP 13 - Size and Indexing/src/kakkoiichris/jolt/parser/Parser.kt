@@ -26,7 +26,11 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     /**
      * The current lexed token.
      */
-    private var token = lexer.next()
+    private lateinit var token: Token<*>
+
+    init {
+        step()
+    }
 
     /**
      * Parses all statements and puts them into a program instance.
@@ -50,15 +54,6 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      */
     fun parseExpr() =
         expr()
-
-    /**
-     * Resets this parser's lexer, and starts the parser over from the beginning.
-     */
-    fun reset() {
-        lexer.reset()
-
-        token = lexer.next()
-    }
 
     /**
      * @return The context of the current [token]
@@ -518,7 +513,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single prefix unary expression if a '-' is present
      */
     private fun prefixExpr(): Expr {
-        if (matchAny(TokenType.Symbol.DASH, TokenType.Symbol.EXCLAMATION)) {
+        if (matchAny(TokenType.Symbol.DASH, TokenType.Symbol.EXCLAMATION, TokenType.Symbol.POUND)) {
             val (start, type) = get<TokenType.Symbol>()
 
             val operator = Expr.Unary.Operator[type]
@@ -530,7 +525,23 @@ class Parser(private val source: Source, private val lexer: Lexer) {
             return Expr.Unary(context, operator, expr)
         }
 
-        return terminalExpr()
+        return postfixExpr()
+    }
+
+    private fun postfixExpr():Expr{
+        var expr = terminalExpr()
+
+        while (skip(TokenType.Symbol.LEFT_SQUARE)) {
+            val index = expr()
+
+            mustSkip(TokenType.Symbol.RIGHT_SQUARE, "Expected a closing square bracket")
+
+            val context = expr.context..here()
+
+            expr = Expr.GetIndex(context, expr, index)
+        }
+
+        return expr
     }
 
     /**
@@ -543,7 +554,9 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         match(TokenType.Symbol.LEFT_PAREN) -> nestedExpr()
 
-        else                               -> joltError("Invalid terminal starting with '${token.type}'", source.getLine(here().row), here())
+        match<TokenType.OpenInterpolate>() -> interpolationExpr()
+
+        else                               -> joltError("Invalid expression starting with '${token.type}'", source.getLine(here().row), here())
     }
 
     /**
@@ -579,5 +592,34 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         val context = start..here()
 
         return Expr.Nested(context, expr)
+    }
+
+    private fun interpolationExpr(): Expr.Interpolation {
+        val start = here()
+
+        val exprs = mutableListOf<Expr>()
+
+        val open = get<TokenType.OpenInterpolate>()
+
+        exprs += Expr.Value(open.context, open.type.value)
+
+        do {
+            exprs += expr()
+
+            if (match<TokenType.MidInterpolate>()) {
+                val mid = get<TokenType.MidInterpolate>()
+
+                exprs += Expr.Value(mid.context, mid.type.value)
+            }
+        }
+        while (!match<TokenType.CloseInterpolate>())
+
+        val close = get<TokenType.CloseInterpolate>()
+
+        exprs += Expr.Value(close.context, close.type.value)
+
+        val context = start..here()
+
+        return Expr.Interpolation(context, exprs)
     }
 }

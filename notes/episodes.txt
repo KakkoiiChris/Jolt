@@ -1,0 +1,32 @@
+00 - Overview & UI
+01 - Lexer
+02 - Parser
+03 - Runtime
+04 - Expr vs Stmt
+05 - Arithmetic
+06 - Variables
+07 - Logic
+08 - Decisions
+09 - Blocks & Scopes
+10 - Loops & Redirects
+11 - Strings
+12 - Interpolation
+13 - Size & Indexing
+14 - For Loops
+15 - Destructuring
+16 - Lists
+17 - List Generators
+18 - Type System
+19 - Type Casting
+20 - Functions & Lambdas
+21 - Native Functions
+22 - Imports & Local Files
+23 - Data Structures
+24 - Methods
+25 - Traits
+26 - Operator Overloading
+27 - Enums
+28 - Pattern Matching
+29 - Standard Library
+30 - Language Integrations
+31 - Final Project

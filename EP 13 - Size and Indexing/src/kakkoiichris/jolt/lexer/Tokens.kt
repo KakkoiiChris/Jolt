@@ -75,6 +75,12 @@ sealed interface TokenType {
         CONTINUE,
     }
 
+    data class OpenInterpolate(val value: JoltValue.String) : TokenType
+
+    data class MidInterpolate(val value: JoltValue.String) : TokenType
+
+    data class CloseInterpolate(val value: JoltValue.String) : TokenType
+
     /**
      * Token type that represents a unique single or multiple character symbol.
      *
@@ -155,6 +161,21 @@ sealed interface TokenType {
          * A percent sign « `!` » used for logical comparisons.
          */
         EXCLAMATION("!"),
+
+        /**
+         * A pound sign « `#` » used for sizes.
+         */
+        POUND("#"),
+
+        /**
+         * A pound sign « `#` » used for indexing.
+         */
+        LEFT_SQUARE("["),
+
+        /**
+         * A pound sign « `#` » used for indexing.
+         */
+        RIGHT_SQUARE("]"),
 
         /**
          * A left parenthesis « `(` » used for nested expressions.

@@ -83,7 +83,7 @@ private fun file(filePath: String) {
  */
 private fun exec(source: Source) {
     val (value, duration) = measureTimedValue {
-        println("Executing '${source.text}' from '${source.name}'!")
+        println("Executing '${source.text}' from '${source.name}'!\n")
     }
 
     println("$JOLT $value\n\n${duration.inWholeNanoseconds / 1E6}ms".wrapBox() + '\n')

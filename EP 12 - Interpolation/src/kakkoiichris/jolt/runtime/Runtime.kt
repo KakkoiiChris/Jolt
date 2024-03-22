@@ -96,8 +96,6 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
             Expr.Unary.Operator.NEGATE -> negateOperator(operand)
 
             Expr.Unary.Operator.NOT    -> notOperator(operand)
-
-            Expr.Unary.Operator.SIZE   -> sizeOperator(operand)
         }
     }
 
@@ -119,15 +117,6 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
         is JoltValue.Boolean -> JoltValue.Boolean(!o.value)
 
         else                 -> TODO()
-    }
-
-    /**
-     *
-     */
-    private fun sizeOperator(operand: Expr) = when (val o = visit(operand)) {
-        is JoltValue.String -> JoltValue.Number(o.value.length.toDouble())
-
-        else                -> JoltValue.Number(1.0)
     }
 
     /**

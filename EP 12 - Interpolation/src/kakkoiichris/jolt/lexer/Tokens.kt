@@ -163,11 +163,6 @@ sealed interface TokenType {
         EXCLAMATION("!"),
 
         /**
-         * A pound sign « `#` » used for sizes.
-         */
-        POUND("#"),
-
-        /**
          * A left parenthesis « `(` » used for nested expressions.
          */
         LEFT_PAREN("("),

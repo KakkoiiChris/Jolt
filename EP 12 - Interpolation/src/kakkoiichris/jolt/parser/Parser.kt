@@ -92,8 +92,6 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         if (lexer.hasNext()) {
             token = lexer.next()
         }
-
-        println(token)
     }
 
     /**
@@ -515,7 +513,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single prefix unary expression if a '-' is present
      */
     private fun prefixExpr(): Expr {
-        if (matchAny(TokenType.Symbol.DASH, TokenType.Symbol.EXCLAMATION, TokenType.Symbol.POUND)) {
+        if (matchAny(TokenType.Symbol.DASH, TokenType.Symbol.EXCLAMATION)) {
             val (start, type) = get<TokenType.Symbol>()
 
             val operator = Expr.Unary.Operator[type]

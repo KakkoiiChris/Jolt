@@ -10,7 +10,6 @@
  ********************************************/
 package kakkoiichris.jolt.parser
 
-import kakkoiichris.jolt.JoltValue
 import kakkoiichris.jolt.lexer.Context
 import kakkoiichris.jolt.lexer.TokenType
 
@@ -41,7 +40,7 @@ sealed interface Expr {
      *
      * @property value The value of this expression
      */
-    data class Value(override val context: Context, val value: JoltValue<*>) : Expr {
+    data class Value(override val context: Context, val value: Double) : Expr {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitValueExpr(this)
     }
@@ -227,17 +226,5 @@ sealed interface Expr {
  *
  * @return A [Value][Expr.Value] expression
  */
-fun Boolean.toValue(context: Context = Context.none) =
-    Expr.Value(context, JoltValue.Boolean(this))
-
-/**
- * Helper method to wrap the number into a value expression.
- *
- * @receiver The value to wrap
- *
- * @param context The [Context] to give the new expression
- *
- * @return A [Value][Expr.Value] expression
- */
 fun Double.toValue(context: Context = Context.none) =
-    Expr.Value(context, JoltValue.Number(this))
+    Expr.Value(context, this)

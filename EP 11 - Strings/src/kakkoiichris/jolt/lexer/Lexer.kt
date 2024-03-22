@@ -526,8 +526,6 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
 
             skip('%')  -> TokenType.Symbol.PERCENT
 
-            skip('#')  -> TokenType.Symbol.POUND
-
             skip('(')  -> TokenType.Symbol.LEFT_PAREN
 
             skip(')')  -> TokenType.Symbol.RIGHT_PAREN

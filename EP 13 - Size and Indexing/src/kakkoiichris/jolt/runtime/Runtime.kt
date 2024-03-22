@@ -96,6 +96,8 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
             Expr.Unary.Operator.NEGATE -> negateOperator(operand)
 
             Expr.Unary.Operator.NOT    -> notOperator(operand)
+
+            Expr.Unary.Operator.SIZE   -> sizeOperator(operand)
         }
     }
 
@@ -117,6 +119,15 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
         is JoltValue.Boolean -> JoltValue.Boolean(!o.value)
 
         else                 -> TODO()
+    }
+
+    /**
+     *
+     */
+    private fun sizeOperator(operand: Expr) = when (val o = visit(operand)) {
+        is JoltValue.String -> JoltValue.Number(o.value.length.toDouble())
+
+        else                -> JoltValue.Number(1.0)
     }
 
     /**
@@ -411,6 +422,30 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
         record.value = v
 
         return v
+    }
+
+    override fun visitInterpolationExpr(expr: Expr.Interpolation): JoltValue.String {
+        val result = buildString {
+            for (e in expr.exprs) {
+                append(visit(e))
+            }
+        }
+
+        return JoltValue.String(result)
+    }
+
+    override fun visitGetIndexExpr(expr: Expr.GetIndex): JoltValue<*> {
+        val (_, target, index) = expr
+
+        return when (val t = visit(target)) {
+            is JoltValue.String -> when (val i = visit(index)) {
+                is JoltValue.Number -> JoltValue.String(t.value[i.value.toInt()].toString())
+
+                else                -> joltError("String index must be a number", source.getLine(index.context.row), index.context)
+            }
+
+            else                -> joltError("Value '$t' cannot be indexed", source.getLine(index.context.row), index.context)
+        }
     }
 
     /**

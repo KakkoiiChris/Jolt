@@ -90,12 +90,7 @@ sealed interface Expr {
             /**
              * The not operator.
              */
-            NOT(TokenType.Symbol.EXCLAMATION),
-
-            /**
-             * The size operator.
-             */
-            SIZE(TokenType.Symbol.POUND);
+            NOT(TokenType.Symbol.EXCLAMATION);
 
             companion object {
                 /**
