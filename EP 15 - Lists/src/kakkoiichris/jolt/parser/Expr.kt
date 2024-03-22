@@ -224,6 +224,11 @@ sealed interface Expr {
             visitor.visitGetIndexExpr(this)
     }
 
+    data class SetIndex(override val context: Context, val target: Expr, val index: Expr, val value: Expr) : Expr {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitSetIndexExpr(this)
+    }
+
     data class ListLiteral(override val context: Context, val elements: Exprs) : Expr {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitListLiteralExpr(this)
@@ -293,6 +298,8 @@ sealed interface Expr {
         fun visitInterpolationExpr(expr: Interpolation): X
 
         fun visitGetIndexExpr(expr: GetIndex): X
+
+        fun visitSetIndexExpr(expr: SetIndex): X
 
         fun visitListLiteralExpr(expr: ListLiteral): X
     }

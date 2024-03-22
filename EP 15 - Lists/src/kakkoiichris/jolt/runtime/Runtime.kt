@@ -373,7 +373,11 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
             JoltValue.String(l.value + r.toString())
         }
 
-        else                 -> invalidLeftOperand(l, Expr.Binary.Operator.ADD, left.context)
+        is JoltValue.List    -> {
+            val r = visit(right)
+
+            JoltValue.List((l.value + r).toMutableList())
+        }
     }
 
     /**
@@ -401,6 +405,20 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
 
         is JoltValue.String -> when (val r = visit(right)) {
             is JoltValue.Number -> JoltValue.String(l.value.repeat(r.value.toInt()))
+
+            else                -> invalidRightOperand(r, Expr.Binary.Operator.MULTIPLY, right.context)
+        }
+
+        is JoltValue.List   -> when (val r = visit(right)) {
+            is JoltValue.Number -> {
+                val list = buildList {
+                    repeat(r.value.toInt()) {
+                        addAll(l.value)
+                    }
+                }.toMutableList()
+
+                JoltValue.List(list)
+            }
 
             else                -> invalidRightOperand(r, Expr.Binary.Operator.MULTIPLY, right.context)
         }
@@ -466,23 +484,59 @@ class Runtime(private val source: Source, private val memory: Memory = Memory())
         return JoltValue.String(result)
     }
 
+    private fun checkIndexOutOfBounds(index: Int, type: String, size: Int, context: Context) {
+        if (index !in 0..<size) {
+            joltError("Index '$index' out of bounds for '$type' of length '$size'", source.getLine(context.row), context)
+        }
+    }
+
     override fun visitGetIndexExpr(expr: Expr.GetIndex): JoltValue<*> {
         val (_, target, index) = expr
 
         return when (val t = visit(target)) {
             is JoltValue.String -> when (val i = visit(index)) {
-                is JoltValue.Number -> JoltValue.String(t.value[i.value.toInt()].toString())
+                is JoltValue.Number -> {
+                    checkIndexOutOfBounds(i.value.toInt(), "string", t.value.length, index.context)
+
+                    JoltValue.String(t.value[i.value.toInt()].toString())
+                }
 
                 else                -> joltError("String index must be a number", source.getLine(index.context.row), index.context)
             }
 
             is JoltValue.List   -> when (val i = visit(index)) {
-                is JoltValue.Number -> t.value[i.value.toInt()]
+                is JoltValue.Number -> {
+                    checkIndexOutOfBounds(i.value.toInt(), "list", t.value.size, index.context)
+
+                    t.value[i.value.toInt()]
+                }
 
                 else                -> joltError("String index must be a number", source.getLine(index.context.row), index.context)
             }
 
             else                -> joltError("Value '$t' cannot be indexed", source.getLine(index.context.row), index.context)
+        }
+    }
+
+    override fun visitSetIndexExpr(expr: Expr.SetIndex): JoltValue<*> {
+        val (_, target, index, value) = expr
+
+        return when (val t = visit(target)) {
+            is JoltValue.List -> when (val i = visit(index)) {
+                is JoltValue.Number -> {
+                    checkIndexOutOfBounds(i.value.toInt(), "list", t.value.size, index.context)
+
+                    val v = visit(value)
+
+                    t.value[i.value.toInt()] = v
+
+                    v
+                }
+
+                else                -> joltError("String index must be a number", source.getLine(index.context.row), index.context)
+            }
+
+            else              -> joltError("Value '$t' cannot be indexed", source.getLine(index.context.row), index.context)
         }
     }
 

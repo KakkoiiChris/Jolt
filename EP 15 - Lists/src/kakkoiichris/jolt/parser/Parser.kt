@@ -394,16 +394,28 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun assignExpr(): Expr {
         val expr = orExpr()
 
-        if (match(TokenType.Symbol.EQUAL)) {
-            if (expr !is Expr.Name) joltError("Value '$expr' is not assignable", source.getLine(expr.context.row), expr.context)
+        if (skip(TokenType.Symbol.EQUAL)) {
+            return when (expr) {
+                is Expr.Name     -> {
+                    val value = orExpr()
 
-            mustSkip(TokenType.Symbol.EQUAL)
+                    val context = expr.context..here()
 
-            val value = orExpr()
+                    Expr.Assign(context, expr, value)
+                }
 
-            val context = expr.context..here()
+                is Expr.GetIndex -> {
+                    val (_, target, index) = expr
 
-            return Expr.Assign(context, expr, value)
+                    val value = expr()
+
+                    val context = expr.context..here()
+
+                    Expr.SetIndex(context, target, index, value)
+                }
+
+                else             -> joltError("Assignment target must be a variable name", source.getLine(expr.context.row), expr.context)
+            }
         }
 
         return expr
