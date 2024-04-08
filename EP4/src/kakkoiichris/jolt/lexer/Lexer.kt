@@ -79,7 +79,7 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
             return when {
                 match(Char::isDigit) -> number()
 
-                else                 -> joltError("Illegal character '${peek()}'", source, here())
+                else                 -> symbol()
             }
         }
 
@@ -329,6 +329,23 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
         val type = TokenType.Value(result.toDouble())
 
         return Token(context, type)
+    }
+
+    /**
+     * @return A [token][Token] with a [Symbol][TokenType.Symbol] token [type][TokenType]
+     *
+     * @throws JoltError If an unknown character is encountered
+     */
+    private fun symbol(): Token<TokenType.Symbol> {
+        val start = here()
+
+        val symbol = TokenType.Symbol.entries
+            .firstOrNull { skip(it.rep) }
+            ?: joltError("Illegal character '${peek()}'", source, start)
+
+        val context = start..here()
+
+        return Token(context, symbol)
     }
 
     /**

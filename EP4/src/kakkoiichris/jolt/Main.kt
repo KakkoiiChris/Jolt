@@ -10,6 +10,8 @@
 package kakkoiichris.jolt
 
 import kakkoiichris.jolt.lexer.Lexer
+import kakkoiichris.jolt.parser.Parser
+import kakkoiichris.jolt.runtime.Runtime
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 import kotlin.time.measureTimedValue
@@ -47,9 +49,13 @@ private fun file(filePath: String) {
         try {
             val lexer = Lexer(source)
 
-            for (token in lexer) {
-                println(token)
-            }
+            val parser = Parser(source, lexer)
+
+            val program = parser.parse()
+
+            val runtime = Runtime(source)
+
+            runtime.run(program)
         }
         catch (e: JoltError) {
             System.err.println(e.message)

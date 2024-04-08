@@ -5,7 +5,7 @@
  *     +#+    +#+    +:+ +#+        +#+     *
  *     +#+    +#+    +#+ +#+        +#+     *
  * #+# #+#    #+#    #+# #+#        #+#     *
- *   *            Scripting Language            *
+ *            Scripting Language            *
  ********************************************/
 package kakkoiichris.jolt
 

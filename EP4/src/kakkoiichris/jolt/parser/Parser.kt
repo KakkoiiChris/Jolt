@@ -33,13 +33,13 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A new [Program] instance
      */
     fun parse(): Program {
-        val exprs = mutableListOf<Expr>()
+        val stmts = mutableListOf<Stmt>()
 
         while (!atEndOfFile()) {
-            exprs += expr()
+            stmts += stmt()
         }
 
-        return Program(exprs)
+        return Program(stmts)
     }
 
     /**
@@ -114,6 +114,39 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      */
     private fun atEndOfFile() =
         match(TokenType.EndOfFile)
+
+    /**
+     * @return A single statement
+     */
+    private fun stmt() = when {
+        match(TokenType.Symbol.SEMICOLON) -> emptyStmt()
+
+        else                              -> expressionStmt()
+    }
+
+    /**
+     * @return A single empty statement
+     */
+    private fun emptyStmt(): Stmt.Empty {
+        val context = here()
+
+        mustSkip(TokenType.Symbol.SEMICOLON)
+
+        return Stmt.Empty(context)
+    }
+
+    /**
+     * @return A single expression statement
+     */
+    private fun expressionStmt(): Stmt.Expression {
+        val expr = expr()
+
+        val context = expr.context..here()
+
+        mustSkip(TokenType.Symbol.SEMICOLON, "Expected a semicolon")
+
+        return Stmt.Expression(context, expr)
+    }
 
     /**
      * @return A single expression

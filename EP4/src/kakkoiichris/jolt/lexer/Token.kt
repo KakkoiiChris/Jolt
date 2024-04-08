@@ -44,6 +44,25 @@ sealed interface TokenType {
     data class Value(val value: Double) : TokenType
 
     /**
+     * Token type that represents a unique single or multiple character symbol.
+     *
+     * @property rep The string representation of the token
+     */
+    enum class Symbol(val rep: String) : TokenType {
+        /**
+         * A semicolon used for the end of statements.
+         *
+         * « `;` »
+         */
+        SEMICOLON(";");
+
+        /**
+         * @return The [rep] of this entry
+         */
+        override fun toString() = rep
+    }
+
+    /**
      * Token type that represent the end of the file.
      */
     data object EndOfFile : TokenType
