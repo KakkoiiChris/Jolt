@@ -50,6 +50,34 @@ sealed interface TokenType {
      */
     enum class Symbol(val rep: String) : TokenType {
         /**
+         * A plus sign « `+` » used for addition.
+         */
+        PLUS("+"),
+        /**
+         * A dash « `-` » used for negation and subtraction.
+         */
+        DASH("-"),
+        /**
+         * An asterisk « `*` » used for multiplication.
+         */
+        STAR("*"),
+        /**
+         * A forward slash « `/` » used for division.
+         */
+        SLASH("/"),
+        /**
+         * A percent sign « `%` » used for remainders.
+         */
+        PERCENT("%"),
+        /**
+         * A left parenthesis « `(` » used for nested expressions.
+         */
+        LEFT_PAREN("("),
+        /**
+         * A right parenthesis « `)` » used for nested expressions.
+         */
+        RIGHT_PAREN(")"),
+        /**
          * A semicolon « `;` » used for the ends of statements.
          */
         SEMICOLON(";");
