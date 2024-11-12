@@ -79,6 +79,8 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
             return when {
                 match(Char::isDigit) -> number()
 
+                match(::isWordStartChar) -> word()
+
                 else                 -> symbol()
             }
         }
@@ -242,6 +244,16 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
         match(NUL)
 
     /**
+     * @return `true` if the given character is alphabetic or is an underscore, or `false` otherwise
+     */
+    private fun isWordStartChar(char: Char) = char.isLetter() || char == '_'
+
+    /**
+     * @return `true` if the given character is alphanumeric or is an underscore, or `false` otherwise
+     */
+    private fun isWordChar(char: Char) = char.isLetterOrDigit() || char == '_'
+
+    /**
      * Steps past any contiguous whitespace characters.
      */
     private fun skipWhitespace() {
@@ -327,6 +339,28 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
         val context = start..here()
 
         val type = TokenType.Value(result.toDouble())
+
+        return Token(context, type)
+    }
+
+    /**
+     * @return A [token][Token] with a [Keyword][TokenType.Keyword] token type if the lexed word is a valid keyword, or a [Name][TokenType.Name] token type otherwise
+     */
+    private fun word(): Token<*> {
+        val start = here()
+
+        val result = buildString {
+            do {
+                take()
+            }
+            while (match(::isWordChar))
+        }
+
+        val context = start..here()
+
+        val keyword = TokenType.Keyword.entries.firstOrNull { it.name.equals(result, ignoreCase = true) }
+
+        val type = keyword ?: TokenType.Name(result)
 
         return Token(context, type)
     }

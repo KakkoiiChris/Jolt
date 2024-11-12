@@ -1,0 +1,7 @@
+var x: num = 42;
+
+x = 3;
+
+let y: num = 69;
+
+y = 8;

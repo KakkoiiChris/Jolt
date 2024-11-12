@@ -9,7 +9,9 @@
  */
 package kakkoiichris.jolt.runtime
 
+import kakkoiichris.jolt.JoltError
 import kakkoiichris.jolt.Source
+import kakkoiichris.jolt.joltError
 import kakkoiichris.jolt.parser.Expr
 import kakkoiichris.jolt.parser.Program
 import kakkoiichris.jolt.parser.Stmt
@@ -18,10 +20,11 @@ import kakkoiichris.jolt.parser.Stmt
  * A class that executes programs by implementing the visitors of both the Expr and Stmt class.
  */
 class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Double> {
-    /**
-     * The value of the last expression.
-     */
-    private var last = 0.0
+    private val memory = Memory()
+
+    init {
+        memory["\$last"] = 0.0
+    }
 
     /**
      * Visits each of the program's statements in order.
@@ -35,7 +38,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
             visit(stmt)
         }
 
-        return last
+        return memory["\$last"]!!
     }
 
     /**
@@ -46,12 +49,25 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
     override fun visitEmptyStmt(stmt: Stmt.Empty) = Unit
 
     /**
+     * Registers a new variable in memory with the given value
+     */
+    override fun visitDeclarationStmt(stmt: Stmt.Declaration) {
+        val (_, _, name, _, expr) = stmt
+
+        val value = visit(expr)
+
+        memory[name.value] = value
+    }
+
+    /**
      * Stores the value of the contained expression, and prints it to the screen.
      *
      * @param stmt The statement to visit
      */
     override fun visitExpressionStmt(stmt: Stmt.Expression) {
-        last = visit(stmt.expr)
+        val last = visit(stmt.expr)
+
+        memory["\$last"] = last
 
         println(last)
     }
@@ -62,6 +78,14 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
      * @return The value contained by this expression
      */
     override fun visitValueExpr(expr: Expr.Value) = expr.value
+
+    /**
+     * @return The value of the variable stored in memory
+     *
+     * @throws JoltError If the variable name is not present in memory
+     */
+    override fun visitNameExpr(expr: Expr.Name) =
+        memory[expr.value]!!
 
     /**
      * @param expr The expression to visit
@@ -94,5 +118,20 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
         Expr.Binary.Operator.DIVIDE    -> visit(expr.operandLeft) / visit(expr.operandRight)
 
         Expr.Binary.Operator.REMAINDER -> visit(expr.operandLeft) % visit(expr.operandRight)
+    }
+
+    /**
+     * Changes the value of the variable stored in memory.
+     *
+     * @return The value assigned
+     *
+     * @throws JoltError If the variable name is not present in memory, or if the variable is constant
+     */
+    override fun visitAssignExpr(expr: Expr.Assign): Double {
+        val value = visit(expr.value)
+
+        memory[expr.name.value] = value
+
+        return value
     }
 }

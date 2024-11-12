@@ -135,9 +135,11 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single statement
      */
     private fun stmt() = when {
-        match(TokenType.Symbol.SEMICOLON) -> emptyStmt()
+        match(TokenType.Symbol.SEMICOLON)                      -> emptyStmt()
 
-        else                              -> expressionStmt()
+        matchAny(TokenType.Keyword.LET, TokenType.Keyword.VAR) -> variableStmt()
+
+        else                                                   -> expressionStmt()
     }
 
     /**
@@ -147,6 +149,25 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         val context = here()
 
         mustSkip(TokenType.Symbol.SEMICOLON)
+
+        return Stmt.Empty(context)
+    }
+
+    /**
+     * @return A single empty statement
+     */
+    private fun variableStmt(): Stmt.Empty {
+        val context = here()
+
+        val constant = skip(TokenType.Keyword.LET)
+
+        if (!constant) {
+            mustSkip(TokenType.Keyword.VAR)
+        }
+
+        val name = name()
+
+        val typed = skip(TokenType.Symbol.COLON)
 
         return Stmt.Empty(context)
     }
@@ -237,9 +258,15 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun terminal() = when {
         match<TokenType.Value>()           -> value()
 
+        match<TokenType.Name>()            -> name()
+
         match(TokenType.Symbol.LEFT_PAREN) -> nested()
 
-        else -> joltError("Invalid terminal starting with '${token.type}'", source, here())
+        else                               -> joltError(
+            "Invalid terminal starting with '${token.type}'",
+            source,
+            here()
+        )
     }
 
     /**
@@ -249,6 +276,15 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         val (context, type) = get<TokenType.Value>()
 
         return Expr.Value(context, type.value)
+    }
+
+    /**
+     * @return A single name expression
+     */
+    private fun name(): Expr.Name {
+        val (context, type) = get<TokenType.Name>()
+
+        return Expr.Name(context, type.value)
     }
 
     /**

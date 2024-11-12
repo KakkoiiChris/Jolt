@@ -1,12 +1,12 @@
-/********************************************
- * ::::::::::: ::::::::  :::    ::::::::::: *
- *     :+:    :+:    :+: :+:        :+:     *
- *     +:+    +:+    +:+ +:+        +:+     *
- *     +#+    +#+    +:+ +#+        +#+     *
- *     +#+    +#+    +#+ +#+        +#+     *
- * #+# #+#    #+#    #+# #+#        #+#     *
- *            Scripting Language            *
- ********************************************/
+/*      ___  _______  ___    _______
+ *     |   ||       ||   |  |       |
+ *     |   ||   _   ||   |  |_     _|
+ *     |   ||  | |  ||   |    |   |
+ *  ___|   ||  |_|  ||   |___ |   |
+ * |       ||       ||       ||   |
+ * |_______||_______||_______||___|
+ *         SCRIPTING LANGUAGE
+ */
 package kakkoiichris.jolt.parser
 
 import kakkoiichris.jolt.lexer.Context
@@ -60,7 +60,7 @@ sealed interface Expr {
         /**
          * Visits a value expression.
          *
-         * @param expr The statement to visit
+         * @param expr The expression to visit
          */
         fun visitValueExpr(expr: Value): X
     }

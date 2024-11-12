@@ -42,6 +42,14 @@ sealed interface Stmt {
     }
 
     /**
+     * Represents an empty statement that does nothing.
+     */
+    data class Declaration(override val context: Context, val constant: Boolean, val name: Expr.Name, val type: Type, val expr: Expr) : Stmt {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitDeclarationStmt(this)
+    }
+
+    /**
      * Represents a single expression statement.
      *
      * @property expr The expression contained by this statement
@@ -71,6 +79,13 @@ sealed interface Stmt {
          * @param stmt The statement to visit
          */
         fun visitEmptyStmt(stmt: Empty): X
+
+        /**
+         * Visits a declaration statement.
+         *
+         * @param stmt The statement to visit
+         */
+        fun visitDeclarationStmt(stmt: Declaration): X
 
         /**
          * Visits an expression statement.
