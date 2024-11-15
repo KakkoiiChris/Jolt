@@ -15,21 +15,28 @@ package kakkoiichris.jolt.lexer
  * @property name The name of the file this token originated from
  * @property row The row this token originated from
  * @property column The column this token originated from
- * @property length The length of the token
+ * @property start The starting position of the token
+ * @property end The ending position of the token
  */
 data class Context(
     val name: String,
     val row: Int,
     val column: Int,
-    val length: Int,
+    val start: Int,
+    val end: Int
 ) {
+    /**
+     * @return The horizontal length of this token
+     */
+    val length get() = end - start
+
     /**
      * @param other The end [Context] to encompass
      *
      * @return A new [Context] instance spanning from this token to the other token
      */
     operator fun rangeTo(other: Context) =
-        Context(name, row, column, other.length - length + 1)
+        Context(name, row, column, start, other.end - 1)
 }
 
 /**

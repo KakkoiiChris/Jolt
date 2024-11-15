@@ -92,7 +92,7 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
      * @return A new [Context] instance with the location data of the current position within the [Lexer]
      */
     private fun here(length: Int = 1) =
-        Context(source.name, row, column, length)
+        Context(source.name, row, column, pos, pos + length)
 
     /**
      * @param offset The amount of characters to look forward

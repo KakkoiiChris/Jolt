@@ -31,15 +31,21 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
      */
     private var pos = 0
 
+    private var lastPos = pos
+
     /**
      * The vertical position within the source code.
      */
     private var row = 1
 
+    private var lastRow = row
+
     /**
      * The horizontal position within the source code.
      */
     private var column = 1
+
+    private var lastColumn = column
 
     /**
      * @return `true` if [pos] is less than or equal to the length if the source code, or `false` otherwise
@@ -77,15 +83,21 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
             }
 
             return when {
-                match(Char::isDigit) -> number()
+                match(Char::isDigit)     -> number()
 
                 match(::isWordStartChar) -> word()
 
-                else                 -> symbol()
+                else                     -> symbol()
             }
         }
 
         return endOfFile()
+    }
+
+    fun undo() {
+        pos = lastPos
+        row = lastRow
+        column = lastColumn
     }
 
     /**
@@ -94,7 +106,7 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
      * @return A new [Context] instance with the location data of the current position within the [Lexer]
      */
     private fun here(length: Int = 1) =
-        Context(source.name, row, column, length)
+        Context(source.name, row, column, pos, pos + length)
 
     /**
      * @param offset The amount of characters to look forward
@@ -148,7 +160,11 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
      *
      * @param amount The amount of characters to move the lexer by
      */
-    private fun step(amount: Int = 1) =
+    private fun step(amount: Int = 1) {
+        lastPos = pos
+        lastRow = row
+        lastColumn = column
+
         repeat(amount) {
             if (match('\n')) {
                 row++
@@ -160,6 +176,7 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
 
             pos++
         }
+    }
 
     /**
      * Advances the lexer if the currently [peeked][peek] character is equivalent to the given character.

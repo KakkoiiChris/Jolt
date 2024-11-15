@@ -12,6 +12,7 @@ package kakkoiichris.jolt.parser
 import kakkoiichris.jolt.JoltError
 import kakkoiichris.jolt.Source
 import kakkoiichris.jolt.joltError
+import kakkoiichris.jolt.lexer.Context
 import kakkoiichris.jolt.lexer.Lexer
 import kakkoiichris.jolt.lexer.Token
 import kakkoiichris.jolt.lexer.TokenType
@@ -137,7 +138,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun stmt() = when {
         match(TokenType.Symbol.SEMICOLON)                      -> emptyStmt()
 
-        matchAny(TokenType.Keyword.LET, TokenType.Keyword.VAR) -> variableStmt()
+        matchAny(TokenType.Keyword.LET, TokenType.Keyword.VAR) -> declarationStmt()
 
         else                                                   -> expressionStmt()
     }
@@ -156,8 +157,8 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     /**
      * @return A single empty statement
      */
-    private fun variableStmt(): Stmt.Empty {
-        val context = here()
+    private fun declarationStmt(): Stmt.Declaration {
+        val start = here()
 
         val constant = skip(TokenType.Keyword.LET)
 
@@ -169,7 +170,33 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         val typed = skip(TokenType.Symbol.COLON)
 
-        return Stmt.Empty(context)
+        var type = if (typed) type() else null
+
+        val assigned = skip(TokenType.Symbol.EQUAL)
+
+        val expr = if (assigned) expr() else null
+
+        if (assigned && type == null) {
+            type = Type(Context.none, expr!!.type)
+        }
+
+        val context = start..here()
+
+        return Stmt.Declaration(context, constant, name, type!!, expr!!)
+    }
+
+    private fun type(): Type {
+        val start = here()
+
+        var dataType = when {
+            skip(TokenType.Keyword.NUM) -> Primitive.NUM
+
+            else                        -> TODO("BASE DATA TYPE")
+        }
+
+        val context = start..here()
+
+        return Type(context, dataType)
     }
 
     /**
@@ -189,7 +216,29 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single expression
      */
     private fun expr() =
-        additive()
+        assign()
+
+    private fun assign(): Expr {
+        if (match<TokenType.Name>()) {
+            val start = here()
+
+            val name = name()
+
+            if (!skip(TokenType.Symbol.EQUAL)) {
+                lexer.undo()
+
+                return additive()
+            }
+
+            val value = additive()
+
+            val context = start..here()
+
+            return Expr.Assign(context, name, value)
+        }
+
+        return additive()
+    }
 
     /**
      * @return A single additive binary expression if a '+' or '-' is present
