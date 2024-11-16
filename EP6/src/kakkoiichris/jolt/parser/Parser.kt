@@ -16,6 +16,7 @@ import kakkoiichris.jolt.lexer.Context
 import kakkoiichris.jolt.lexer.Lexer
 import kakkoiichris.jolt.lexer.Token
 import kakkoiichris.jolt.lexer.TokenType
+import kotlin.math.exp
 
 /**
  * A class that converts tokens into [expressions][Expr], all at once via the [Program] class.
@@ -219,25 +220,25 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         assign()
 
     private fun assign(): Expr {
-        if (match<TokenType.Name>()) {
-            val start = here()
+        val expr = additive()
 
-            val name = name()
-
-            if (!skip(TokenType.Symbol.EQUAL)) {
-                lexer.undo()
-
-                return additive()
+        if (match(TokenType.Symbol.EQUAL)) {
+            if (expr !is Expr.Name) {
+                joltError("Cannot assign to '${expr.javaClass.simpleName}'!", source, expr.context)
             }
+
+            val start = expr.context
+
+            mustSkip(TokenType.Symbol.EQUAL)
 
             val value = additive()
 
             val context = start..here()
 
-            return Expr.Assign(context, name, value)
+            return Expr.Assign(context, expr, value)
         }
 
-        return additive()
+        return expr
     }
 
     /**

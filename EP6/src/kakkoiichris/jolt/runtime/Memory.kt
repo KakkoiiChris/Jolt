@@ -16,7 +16,7 @@ class Memory {
     /**
      * A map of records of all declared variables.
      */
-    private val values = mutableMapOf<String, Double>()
+    private val values = mutableMapOf<String, Record>()
 
     /**
      * @param name The variable name to retrieve
@@ -32,7 +32,19 @@ class Memory {
      * @param name The variable name to set
      * @param record The variable to set
      */
-    operator fun set(name: String, value: Double) {
-        values[name] = value
+    operator fun set(name: String, constant: Boolean, value: Double) {
+        values[name] = Record(constant, value)
     }
+
+    /**
+     * Sets the given name to a new record.
+     *
+     * @param name The variable name to set
+     * @param record The variable to set
+     */
+    operator fun set(name: String, record: Record) {
+        values[name] = record
+    }
+
+    data class Record(val constant: Boolean, var value: Double)
 }

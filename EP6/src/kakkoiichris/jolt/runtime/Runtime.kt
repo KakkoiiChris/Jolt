@@ -22,8 +22,10 @@ import kakkoiichris.jolt.parser.Stmt
 class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Double> {
     private val memory = Memory()
 
+    private val last = Memory.Record(false, 0.0)
+
     init {
-        memory["\$last"] = 0.0
+        memory["\$last"] = last
     }
 
     /**
@@ -38,7 +40,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
             visit(stmt)
         }
 
-        return memory["\$last"]!!
+        return last.value
     }
 
     /**
@@ -52,11 +54,11 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
      * Registers a new variable in memory with the given value
      */
     override fun visitDeclarationStmt(stmt: Stmt.Declaration) {
-        val (_, _, name, _, expr) = stmt
+        val (_, constant, name, _, expr) = stmt
 
         val value = visit(expr)
 
-        memory[name.value] = value
+        memory[name.value] = Memory.Record(constant, value)
     }
 
     /**
@@ -67,7 +69,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
     override fun visitExpressionStmt(stmt: Stmt.Expression) {
         val last = visit(stmt.expr)
 
-        memory["\$last"] = last
+        this.last.value = last
 
         println(last)
     }
@@ -85,7 +87,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
      * @throws JoltError If the variable name is not present in memory
      */
     override fun visitNameExpr(expr: Expr.Name) =
-        memory[expr.value]!!
+        memory[expr.value].value
 
     /**
      * @param expr The expression to visit
@@ -128,9 +130,15 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
      * @throws JoltError If the variable name is not present in memory, or if the variable is constant
      */
     override fun visitAssignExpr(expr: Expr.Assign): Double {
+        val record = memory[expr.name.value]
+
+        if (record.constant) {
+            joltError("Cannot reassign constant '${expr.name.value}'!", source, expr.context)
+        }
+
         val value = visit(expr.value)
 
-        memory[expr.name.value] = value
+        record.value = value
 
         return value
     }
