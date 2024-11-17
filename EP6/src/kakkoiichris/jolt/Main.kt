@@ -11,6 +11,7 @@ package kakkoiichris.jolt
 
 import kakkoiichris.jolt.lexer.Lexer
 import kakkoiichris.jolt.parser.Parser
+import kakkoiichris.jolt.parser.TypeChecker
 import kakkoiichris.jolt.runtime.Runtime
 import java.nio.file.Paths
 import kotlin.system.exitProcess
@@ -52,6 +53,8 @@ private fun file(filePath: String) {
             val parser = Parser(source, lexer)
 
             val program = parser.parse()
+
+            TypeChecker.check(source, program)
 
             val runtime = Runtime(source)
 

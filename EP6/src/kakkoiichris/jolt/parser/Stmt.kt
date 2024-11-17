@@ -42,7 +42,15 @@ sealed interface Stmt {
     }
 
     /**
-     * Represents an empty statement that does nothing.
+     * Represents a declaration statement that creates a variable with the type's default value.
+     */
+    data class DefaultDeclaration(override val context: Context, val constant: Boolean, val name: Expr.Name, val type: Type) : Stmt {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitDefaultDeclarationStmt(this)
+    }
+
+    /**
+     * Represents a declaration statement that creates a variable with a given value.
      */
     data class Declaration(override val context: Context, val constant: Boolean, val name: Expr.Name, val type: Type, val expr: Expr) : Stmt {
         override fun <X> accept(visitor: Visitor<X>): X =
@@ -79,6 +87,13 @@ sealed interface Stmt {
          * @param stmt The statement to visit
          */
         fun visitEmptyStmt(stmt: Empty): X
+
+        /**
+         * Visits a default declaration statement.
+         *
+         * @param stmt The statement to visit
+         */
+        fun visitDefaultDeclarationStmt(stmt: DefaultDeclaration): X
 
         /**
          * Visits a declaration statement.

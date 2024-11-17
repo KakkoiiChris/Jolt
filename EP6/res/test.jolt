@@ -1,3 +1,1 @@
-let x = 42;
-let y = 69;
-x + y;
+let x: num;

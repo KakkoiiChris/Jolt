@@ -12,11 +12,9 @@ package kakkoiichris.jolt.parser
 import kakkoiichris.jolt.JoltError
 import kakkoiichris.jolt.Source
 import kakkoiichris.jolt.joltError
-import kakkoiichris.jolt.lexer.Context
 import kakkoiichris.jolt.lexer.Lexer
 import kakkoiichris.jolt.lexer.Token
 import kakkoiichris.jolt.lexer.TokenType
-import kotlin.math.exp
 
 /**
  * A class that converts tokens into [expressions][Expr], all at once via the [Program] class.
@@ -171,19 +169,19 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         val typed = skip(TokenType.Symbol.COLON)
 
-        var type = if (typed) type() else null
+        val type = if (typed) type() else null
 
         val assigned = skip(TokenType.Symbol.EQUAL)
 
-        val expr = if (assigned) expr() else null
-
-        if (assigned && type == null) {
-            type = Type(Context.none, expr!!.type)
+        if (!(typed || assigned)) {
+            joltError("Variable '${name.value}' must be typed or assigned", source, name.context)
         }
+
+        val expr = if (assigned) expr() else null
 
         val context = start..here()
 
-        return Stmt.Declaration(context, constant, name, type!!, expr!!)
+        return Stmt.Declaration(context, constant, name, type, expr)
     }
 
     private fun type(): Type {
@@ -192,7 +190,11 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         var dataType = when {
             skip(TokenType.Keyword.NUM) -> Primitive.NUM
 
-            else                        -> TODO("BASE DATA TYPE")
+            else                        -> joltError(
+                "Invalid data type starting with '${token.type}'",
+                source,
+                token.context
+            )
         }
 
         val context = start..here()

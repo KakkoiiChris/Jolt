@@ -16,6 +16,8 @@ data class Type(val context: Context, val value: DataType)
 
 interface DataType
 
+data object Inferred : DataType
+
 enum class Primitive : DataType {
     NUM;
 

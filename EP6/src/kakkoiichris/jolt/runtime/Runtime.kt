@@ -50,15 +50,19 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
      */
     override fun visitEmptyStmt(stmt: Stmt.Empty) = Unit
 
+    override fun visitDefaultDeclarationStmt(stmt: Stmt.DefaultDeclaration) {
+
+    }
+
     /**
      * Registers a new variable in memory with the given value
      */
     override fun visitDeclarationStmt(stmt: Stmt.Declaration) {
-        val (_, constant, name, _, expr) = stmt
+        val (_, constant, name, type, expr) = stmt
 
         val value = visit(expr)
 
-        memory[name.value] = Memory.Record(constant, value)
+        memory[name.value] = value
     }
 
     /**

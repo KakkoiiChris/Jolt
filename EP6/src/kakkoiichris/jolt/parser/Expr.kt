@@ -36,6 +36,18 @@ sealed interface Expr {
      */
     fun <X> accept(visitor: Visitor<X>): X
 
+    data object None:Expr{
+        override val context: Context
+            get() = TODO("Not yet implemented")
+
+        override val type: DataType
+            get() = TODO("Not yet implemented")
+
+        override fun <X> accept(visitor: Visitor<X>): X {
+            TODO("Not yet implemented")
+        }
+    }
+
     /**
      * Represents a single value expression.
      *
@@ -142,10 +154,10 @@ sealed interface Expr {
              */
             ADD(TokenType.Symbol.PLUS) {
                 override fun getType(operandLeft: Expr, operandRight: Expr) = when (operandLeft.type) {
-                    Primitive.NUM -> when(operandRight.type){
-                        Primitive.NUM->Primitive.NUM
+                    Primitive.NUM -> when (operandRight.type) {
+                        Primitive.NUM -> Primitive.NUM
 
-                        else -> TODO("ADD RIGHT")
+                        else          -> TODO("ADD RIGHT")
                     }
 
                     else          -> TODO("ADD LEFT")
@@ -157,10 +169,10 @@ sealed interface Expr {
              */
             SUBTRACT(TokenType.Symbol.DASH) {
                 override fun getType(operandLeft: Expr, operandRight: Expr) = when (operandLeft.type) {
-                    Primitive.NUM -> when(operandRight.type){
-                        Primitive.NUM->Primitive.NUM
+                    Primitive.NUM -> when (operandRight.type) {
+                        Primitive.NUM -> Primitive.NUM
 
-                        else -> TODO("SUBTRACT RIGHT")
+                        else          -> TODO("SUBTRACT RIGHT")
                     }
 
                     else          -> TODO("SUBTRACT LEFT")
@@ -172,10 +184,10 @@ sealed interface Expr {
              */
             MULTIPLY(TokenType.Symbol.STAR) {
                 override fun getType(operandLeft: Expr, operandRight: Expr) = when (operandLeft.type) {
-                    Primitive.NUM -> when(operandRight.type){
-                        Primitive.NUM->Primitive.NUM
+                    Primitive.NUM -> when (operandRight.type) {
+                        Primitive.NUM -> Primitive.NUM
 
-                        else -> TODO("MULTIPLY RIGHT")
+                        else          -> TODO("MULTIPLY RIGHT")
                     }
 
                     else          -> TODO("MULTIPLY LEFT")
@@ -187,10 +199,10 @@ sealed interface Expr {
              */
             DIVIDE(TokenType.Symbol.SLASH) {
                 override fun getType(operandLeft: Expr, operandRight: Expr) = when (operandLeft.type) {
-                    Primitive.NUM -> when(operandRight.type){
-                        Primitive.NUM->Primitive.NUM
+                    Primitive.NUM -> when (operandRight.type) {
+                        Primitive.NUM -> Primitive.NUM
 
-                        else -> TODO("DIVIDE RIGHT")
+                        else          -> TODO("DIVIDE RIGHT")
                     }
 
                     else          -> TODO("DIVIDE LEFT")
@@ -202,17 +214,17 @@ sealed interface Expr {
              */
             REMAINDER(TokenType.Symbol.PERCENT) {
                 override fun getType(operandLeft: Expr, operandRight: Expr) = when (operandLeft.type) {
-                    Primitive.NUM -> when(operandRight.type){
-                        Primitive.NUM->Primitive.NUM
+                    Primitive.NUM -> when (operandRight.type) {
+                        Primitive.NUM -> Primitive.NUM
 
-                        else -> TODO("REMAINDER RIGHT")
+                        else          -> TODO("REMAINDER RIGHT")
                     }
 
                     else          -> TODO("REMAINDER LEFT")
                 }
             };
 
-            abstract fun getType(operandLeft: Expr, operandRight: Expr):DataType
+            abstract fun getType(operandLeft: Expr, operandRight: Expr): DataType
 
             companion object {
                 /**

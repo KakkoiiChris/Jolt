@@ -28,8 +28,8 @@ object TypeChecker : Stmt.Visitor<Unit>, Expr.Visitor<DataType> {
     override fun visitEmptyStmt(stmt: Stmt.Empty) = Unit
 
     override fun visitDeclarationStmt(stmt: Stmt.Declaration) {
-        val expectedType = stmt.type.value
-        val assignedType = visit(stmt.expr)
+        val expectedType = stmt.type?.value
+        val assignedType = stmt.expr?.let { visit(it) }
 
         if (expectedType != assignedType) {
             joltError(
@@ -38,7 +38,7 @@ object TypeChecker : Stmt.Visitor<Unit>, Expr.Visitor<DataType> {
             )
         }
 
-        variableTypes[stmt.name.value] = assignedType
+        variableTypes[stmt.name.value] = assignedType!!
     }
 
     override fun visitExpressionStmt(stmt: Stmt.Expression) {
