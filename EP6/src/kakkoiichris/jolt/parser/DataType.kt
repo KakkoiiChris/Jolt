@@ -14,12 +14,19 @@ import kakkoiichris.jolt.lexer.TokenType
 
 data class Type(val context: Context, val value: DataType)
 
-interface DataType
+interface DataType {
+    fun matches(other: DataType): Boolean
+}
 
-data object Inferred : DataType
+data object Inferred : DataType {
+    override fun matches(other: DataType) = true
+}
 
 enum class Primitive : DataType {
     NUM;
+
+    override fun matches(other: DataType) =
+        equals(other)
 
     companion object {
         operator fun get(keyword: TokenType.Keyword) =

@@ -63,6 +63,8 @@ private fun file(filePath: String) {
         catch (e: JoltError) {
             System.err.println(e.message)
 
+            e.printStackTrace()
+
             Thread.sleep(20)
         }
     }

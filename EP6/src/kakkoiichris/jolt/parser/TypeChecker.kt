@@ -28,22 +28,25 @@ object TypeChecker : Stmt.Visitor<Unit>, Expr.Visitor<DataType> {
     override fun visitEmptyStmt(stmt: Stmt.Empty) = Unit
 
     override fun visitDeclarationStmt(stmt: Stmt.Declaration) {
-        val expectedType = stmt.type?.value
-        val assignedType = stmt.expr?.let { visit(it) }
+        val expectedType = stmt.type.value
+        val assignedType = visit(stmt.expr)
 
-        if (expectedType != assignedType) {
+        if (!expectedType.matches(assignedType)) {
             joltError(
                 "Value of type '$assignedType' cannot be assigned to variable of type '$expectedType'",
                 source, stmt.expr.context
             )
         }
 
-        variableTypes[stmt.name.value] = assignedType!!
+        variableTypes[stmt.name.value] = assignedType
     }
 
     override fun visitExpressionStmt(stmt: Stmt.Expression) {
         visit(stmt.expr)
     }
+
+    override fun visitNoneExpr(expr: Expr.None) =
+        Inferred
 
     override fun visitValueExpr(expr: Expr.Value) =
         Primitive.NUM
@@ -73,7 +76,7 @@ object TypeChecker : Stmt.Visitor<Unit>, Expr.Visitor<DataType> {
         val expectedType = visit(expr.name)
         val assignedType = visit(expr.value)
 
-        if (expectedType != assignedType) {
+        if (!expectedType.matches(assignedType)) {
             joltError(
                 "Value of type '$assignedType' cannot be assigned to variable of type '$expectedType'",
                 source, expr.value.context

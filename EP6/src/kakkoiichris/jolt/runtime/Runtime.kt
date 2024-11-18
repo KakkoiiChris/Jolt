@@ -11,7 +11,6 @@ package kakkoiichris.jolt.runtime
 
 import kakkoiichris.jolt.JoltError
 import kakkoiichris.jolt.Source
-import kakkoiichris.jolt.joltError
 import kakkoiichris.jolt.parser.Expr
 import kakkoiichris.jolt.parser.Program
 import kakkoiichris.jolt.parser.Stmt
@@ -22,7 +21,7 @@ import kakkoiichris.jolt.parser.Stmt
 class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Double> {
     private val memory = Memory()
 
-    private val last = Memory.Record(false, 0.0)
+    private var last = 0.0
 
     init {
         memory["\$last"] = last
@@ -40,7 +39,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
             visit(stmt)
         }
 
-        return last.value
+        return last
     }
 
     /**
@@ -50,15 +49,11 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
      */
     override fun visitEmptyStmt(stmt: Stmt.Empty) = Unit
 
-    override fun visitDefaultDeclarationStmt(stmt: Stmt.DefaultDeclaration) {
-
-    }
-
     /**
      * Registers a new variable in memory with the given value
      */
     override fun visitDeclarationStmt(stmt: Stmt.Declaration) {
-        val (_, constant, name, type, expr) = stmt
+        val (_, _, name, _, expr) = stmt
 
         val value = visit(expr)
 
@@ -71,12 +66,12 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
      * @param stmt The statement to visit
      */
     override fun visitExpressionStmt(stmt: Stmt.Expression) {
-        val last = visit(stmt.expr)
-
-        this.last.value = last
+        last = visit(stmt.expr)
 
         println(last)
     }
+
+    override fun visitNoneExpr(expr: Expr.None) = Double.NaN
 
     /**
      * @param expr The expression to visit
@@ -91,7 +86,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
      * @throws JoltError If the variable name is not present in memory
      */
     override fun visitNameExpr(expr: Expr.Name) =
-        memory[expr.value].value
+        memory[expr.value]
 
     /**
      * @param expr The expression to visit
@@ -134,15 +129,9 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
      * @throws JoltError If the variable name is not present in memory, or if the variable is constant
      */
     override fun visitAssignExpr(expr: Expr.Assign): Double {
-        val record = memory[expr.name.value]
-
-        if (record.constant) {
-            joltError("Cannot reassign constant '${expr.name.value}'!", source, expr.context)
-        }
-
         val value = visit(expr.value)
 
-        record.value = value
+        memory[expr.name.value] = value
 
         return value
     }

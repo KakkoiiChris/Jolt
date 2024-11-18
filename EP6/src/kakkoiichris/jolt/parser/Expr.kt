@@ -37,15 +37,12 @@ sealed interface Expr {
     fun <X> accept(visitor: Visitor<X>): X
 
     data object None:Expr{
-        override val context: Context
-            get() = TODO("Not yet implemented")
+        override val context = Context.none
 
-        override val type: DataType
-            get() = TODO("Not yet implemented")
+        override val type = Inferred
 
-        override fun <X> accept(visitor: Visitor<X>): X {
-            TODO("Not yet implemented")
-        }
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitNoneExpr(this)
     }
 
     /**
@@ -262,6 +259,13 @@ sealed interface Expr {
          */
         fun visit(expr: Expr) =
             expr.accept(this)
+
+        /**
+         * Visits a none expression.
+         *
+         * @param expr The expression to visit
+         */
+        fun visitNoneExpr(expr: None): X
 
         /**
          * Visits a value expression.
