@@ -188,7 +188,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun type(): Type {
         val start = here()
 
-        var dataType = when {
+        val dataType = when {
             skip(TokenType.Keyword.NUM) -> Primitive.NUM
 
             else                        -> joltError(

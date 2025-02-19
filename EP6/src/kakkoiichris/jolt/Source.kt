@@ -20,13 +20,18 @@ import kotlin.io.path.name
  * @property text The content of the source
  */
 data class Source(val name: String, val text: String) {
+    private val lines = text.lines()
+
     /**
      * @param row The row to retrieve
      *
      * @return The line of text, of the source code, at the given row
      */
     fun getLine(row: Int) =
-        text.lines()[row - 1]
+        if (row - 1 in lines.indices)
+            lines[row - 1]
+        else
+            ""
 
     companion object {
         /**

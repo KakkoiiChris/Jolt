@@ -26,7 +26,7 @@ enum class Primitive : DataType {
     NUM;
 
     override fun matches(other: DataType) =
-        equals(other)
+        equals(other) || other === Inferred
 
     companion object {
         operator fun get(keyword: TokenType.Keyword) =

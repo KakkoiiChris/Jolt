@@ -60,17 +60,11 @@ object TypeChecker : Stmt.Visitor<Unit>, Expr.Visitor<DataType> {
     override fun visitNestedExpr(expr: Expr.Nested) =
         visit(expr.expr)
 
-    override fun visitUnaryExpr(expr: Expr.Unary) = when (expr.operator) {
-        Expr.Unary.Operator.NEGATE -> Primitive.NUM
-    }
+    override fun visitUnaryExpr(expr: Expr.Unary) =
+        expr.type
 
-    override fun visitBinaryExpr(expr: Expr.Binary) = when (expr.operator) {
-        Expr.Binary.Operator.ADD       -> Primitive.NUM
-        Expr.Binary.Operator.SUBTRACT  -> Primitive.NUM
-        Expr.Binary.Operator.MULTIPLY  -> Primitive.NUM
-        Expr.Binary.Operator.DIVIDE    -> Primitive.NUM
-        Expr.Binary.Operator.REMAINDER -> Primitive.NUM
-    }
+    override fun visitBinaryExpr(expr: Expr.Binary) =
+        expr.type
 
     override fun visitAssignExpr(expr: Expr.Assign): DataType {
         val expectedType = visit(expr.name)
