@@ -12,7 +12,6 @@ package kakkoiichris.jolt.parser
 import kakkoiichris.jolt.JoltError
 import kakkoiichris.jolt.Source
 import kakkoiichris.jolt.joltError
-import kakkoiichris.jolt.lexer.Context
 import kakkoiichris.jolt.lexer.Lexer
 import kakkoiichris.jolt.lexer.Token
 import kakkoiichris.jolt.lexer.TokenType
@@ -168,39 +167,13 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         val name = name()
 
-        val typed = skip(TokenType.Symbol.COLON)
+        mustSkip(TokenType.Symbol.EQUAL)
 
-        val type = if (typed) type() else Type(Context.none, Inferred)
-
-        val assigned = skip(TokenType.Symbol.EQUAL)
-
-        if (!(typed || assigned)) {
-            joltError("Variable '${name.value}' must be typed or assigned", source, name.context)
-        }
-
-        val expr = if (assigned) expr() else Expr.None
+        val expr = expr()
 
         val context = start..here()
 
-        return Stmt.Declaration(context, constant, name, type, expr)
-    }
-
-    private fun type(): Type {
-        val start = here()
-
-        val dataType = when {
-            skip(TokenType.Keyword.NUM) -> Primitive.NUM
-
-            else                        -> joltError(
-                "Invalid data type starting with '${token.type}'",
-                source,
-                token.context
-            )
-        }
-
-        val context = start..here()
-
-        return Type(context, dataType)
+        return Stmt.Declaration(context, constant, name, expr)
     }
 
     /**

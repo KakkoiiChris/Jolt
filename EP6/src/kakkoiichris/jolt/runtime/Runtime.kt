@@ -11,6 +11,7 @@ package kakkoiichris.jolt.runtime
 
 import kakkoiichris.jolt.JoltError
 import kakkoiichris.jolt.Source
+import kakkoiichris.jolt.joltError
 import kakkoiichris.jolt.parser.Expr
 import kakkoiichris.jolt.parser.Program
 import kakkoiichris.jolt.parser.Stmt
@@ -22,10 +23,6 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
     private val memory = Memory()
 
     private var last = 0.0
-
-    init {
-        memory["\$last"] = last
-    }
 
     /**
      * Visits each of the program's statements in order.
@@ -53,11 +50,17 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
      * Registers a new variable in memory with the given value
      */
     override fun visitDeclarationStmt(stmt: Stmt.Declaration) {
-        val (_, _, name, _, expr) = stmt
+        val (_, constant, name, expr) = stmt
+
+        if (memory.isDeclared(name)) {
+            joltError("Variable name '$name' is already declared", source, name.context)
+        }
 
         val value = visit(expr)
 
-        memory[name.value] = value
+        val reference = Memory.Reference(constant, value)
+
+        memory[name.value] = reference
     }
 
     /**
@@ -85,8 +88,11 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
      *
      * @throws JoltError If the variable name is not present in memory
      */
-    override fun visitNameExpr(expr: Expr.Name) =
-        memory[expr.value]
+    override fun visitNameExpr(expr: Expr.Name): Double {
+        val reference = memory[expr.value] ?: joltError("Name '${expr.value}' is not declared", source, expr.context)
+
+        return reference.value
+    }
 
     /**
      * @param expr The expression to visit
@@ -131,7 +137,14 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
     override fun visitAssignExpr(expr: Expr.Assign): Double {
         val value = visit(expr.value)
 
-        memory[expr.name.value] = value
+        val reference =
+            memory[expr.name.value] ?: joltError("Name '${expr.name.value}' is not declared", source, expr.name.context)
+
+        if (reference.isConstant) {
+            joltError("Name '${expr.name.value}' is constant and cannot be reassigned", source, expr.name.context)
+        }
+
+        reference.value = value
 
         return value
     }

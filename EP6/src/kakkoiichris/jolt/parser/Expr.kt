@@ -26,8 +26,6 @@ sealed interface Expr {
      */
     val context: Context
 
-    val type: DataType
-
     /**
      * Delegates calls to the visitor's visit function to the method designated for this particular expression.
      *
@@ -39,8 +37,6 @@ sealed interface Expr {
     data object None:Expr{
         override val context = Context.none
 
-        override val type = Inferred
-
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitNoneExpr(this)
     }
@@ -51,8 +47,6 @@ sealed interface Expr {
      * @property value The value of this expression
      */
     data class Value(override val context: Context, val value: Double) : Expr {
-        override val type get() = Primitive.NUM
-
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitValueExpr(this)
     }
@@ -63,8 +57,6 @@ sealed interface Expr {
      * @property value The name of this expression
      */
     data class Name(override val context: Context, val value: String) : Expr {
-        override var type = Primitive.NUM
-
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitNameExpr(this)
     }
@@ -75,8 +67,6 @@ sealed interface Expr {
      * @property expr The value of this expression
      */
     data class Nested(override val context: Context, val expr: Expr) : Expr {
-        override val type get() = expr.type
-
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitNestedExpr(this)
     }
@@ -88,8 +78,6 @@ sealed interface Expr {
      * @property operand The operand of this expression
      */
     data class Unary(override val context: Context, val operator: Operator, val operand: Expr) : Expr {
-        override val type get() = operator.getType(operand)
-
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitUnaryExpr(this)
 
@@ -102,15 +90,7 @@ sealed interface Expr {
             /**
              * The negation operator.
              */
-            NEGATE(TokenType.Symbol.DASH) {
-                override fun getType(operand: Expr) = when (operand.type) {
-                    Primitive.NUM -> Primitive.NUM
-
-                    else          -> TODO("NEGATE")
-                }
-            };
-
-            abstract fun getType(operand: Expr): DataType
+            NEGATE(TokenType.Symbol.DASH);
 
             companion object {
                 /**
@@ -135,8 +115,6 @@ sealed interface Expr {
         val operandLeft: Expr,
         val operandRight: Expr
     ) : Expr {
-        override val type get() = operator.getType(operandLeft, operandRight)
-
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitBinaryExpr(this)
 
@@ -149,79 +127,27 @@ sealed interface Expr {
             /**
              * The addition operator.
              */
-            ADD(TokenType.Symbol.PLUS) {
-                override fun getType(operandLeft: Expr, operandRight: Expr) = when (operandLeft.type) {
-                    Primitive.NUM -> when (operandRight.type) {
-                        Primitive.NUM -> Primitive.NUM
-
-                        else          -> TODO("ADD RIGHT")
-                    }
-
-                    else          -> TODO("ADD LEFT")
-                }
-            },
+            ADD(TokenType.Symbol.PLUS),
 
             /**
              * The subtraction operator.
              */
-            SUBTRACT(TokenType.Symbol.DASH) {
-                override fun getType(operandLeft: Expr, operandRight: Expr) = when (operandLeft.type) {
-                    Primitive.NUM -> when (operandRight.type) {
-                        Primitive.NUM -> Primitive.NUM
-
-                        else          -> TODO("SUBTRACT RIGHT")
-                    }
-
-                    else          -> TODO("SUBTRACT LEFT")
-                }
-            },
+            SUBTRACT(TokenType.Symbol.DASH),
 
             /**
              * The multiplication operator.
              */
-            MULTIPLY(TokenType.Symbol.STAR) {
-                override fun getType(operandLeft: Expr, operandRight: Expr) = when (operandLeft.type) {
-                    Primitive.NUM -> when (operandRight.type) {
-                        Primitive.NUM -> Primitive.NUM
-
-                        else          -> TODO("MULTIPLY RIGHT")
-                    }
-
-                    else          -> TODO("MULTIPLY LEFT")
-                }
-            },
+            MULTIPLY(TokenType.Symbol.STAR),
 
             /**
              * The division operator.
              */
-            DIVIDE(TokenType.Symbol.SLASH) {
-                override fun getType(operandLeft: Expr, operandRight: Expr) = when (operandLeft.type) {
-                    Primitive.NUM -> when (operandRight.type) {
-                        Primitive.NUM -> Primitive.NUM
-
-                        else          -> TODO("DIVIDE RIGHT")
-                    }
-
-                    else          -> TODO("DIVIDE LEFT")
-                }
-            },
+            DIVIDE(TokenType.Symbol.SLASH),
 
             /**
              * The remainder operator.
              */
-            REMAINDER(TokenType.Symbol.PERCENT) {
-                override fun getType(operandLeft: Expr, operandRight: Expr) = when (operandLeft.type) {
-                    Primitive.NUM -> when (operandRight.type) {
-                        Primitive.NUM -> Primitive.NUM
-
-                        else          -> TODO("REMAINDER RIGHT")
-                    }
-
-                    else          -> TODO("REMAINDER LEFT")
-                }
-            };
-
-            abstract fun getType(operandLeft: Expr, operandRight: Expr): DataType
+            REMAINDER(TokenType.Symbol.PERCENT);
 
             companion object {
                 /**
@@ -240,8 +166,6 @@ sealed interface Expr {
      * @property value The value to assign
      */
     data class Assign(override val context: Context, val name: Name, val value: Expr) : Expr {
-        override val type get() = value.type
-
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitAssignExpr(this)
     }
