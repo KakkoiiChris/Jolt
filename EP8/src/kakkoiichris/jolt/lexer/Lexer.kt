@@ -22,15 +22,15 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
          * The null-terminator character, used to mark the end of the source.
          */
         private const val NUL = '\u0000'
-
-        /**
-         * A map of all valid literals.
-         */
-        private val literals = listOf(true, false)
-            .associateBy { it.toString() }
-            .mapValues { (_, v) -> JoltValue.of(v) }
-            .mapValues { (_, v) -> TokenType.Value(v) }
     }
+
+    /**
+     * A map of all valid literals.
+     */
+    private val literals = listOf(true, false)
+        .associateBy { it.toString() }
+        .mapValues { (_, v) -> JoltValue.of(v) }
+        .mapValues { (_, v) -> TokenType.Value(v) }
 
     /**
      * The position within the source code string.

@@ -85,6 +85,21 @@ sealed interface TokenType {
      */
     enum class Symbol(val rep: String) : TokenType {
         /**
+         * A pipe « `|` » used for logical or.
+         */
+        PIPE("|"),
+
+        /**
+         * An ampersand « `&` » used for logical and.
+         */
+        AMPERSAND("&"),
+
+        /**
+         * A caret « `==` » used for logical exclusive or.
+         */
+        CARET("^"),
+
+        /**
          * A double equal sign « `==` » used for equality.
          */
         DOUBLE_EQUAL("=="),
@@ -143,6 +158,11 @@ sealed interface TokenType {
          * An exclamation point equal sign « `!=` » used for inequality.
          */
         EXCLAMATION_EQUAL("!="),
+
+        /**
+         * An exclamation point « `!` » used for logical negation.
+         */
+        EXCLAMATION("!"),
 
         /**
          * A left parenthesis « `(` » used for nested expressions.
