@@ -9,6 +9,7 @@
  */
 package kakkoiichris.jolt.runtime
 
+import kakkoiichris.jolt.JoltValue
 import kakkoiichris.jolt.parser.Expr
 
 /**
@@ -35,7 +36,7 @@ class Memory {
      * @param name The name of the variable
      * @param value The value stored by the variable
      */
-    fun declare(isConstant: Boolean, name: Expr.Name, value: Double) {
+    fun declare(isConstant: Boolean, name: Expr.Name, value: JoltValue<*>) {
         references[name.value] = Reference(isConstant, value)
     }
 
@@ -63,5 +64,5 @@ class Memory {
      * @param isConstant Whether the variable was declared as constant
      * @param value The value stored by the variable
      */
-    data class Reference(val isConstant: Boolean, var value: Double)
+    data class Reference(val isConstant: Boolean, var value: JoltValue<*>)
 }

@@ -148,7 +148,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun emptyStmt(): Stmt.Empty {
         val context = here()
 
-        mustSkip(TokenType.Symbol.SEMICOLON)
+        mustSkip(TokenType.Symbol.SEMICOLON, "Expected a semicolon")
 
         return Stmt.Empty(context)
     }
@@ -167,9 +167,11 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         val name = name()
 
-        mustSkip(TokenType.Symbol.EQUAL)
+        val assigned = skip(TokenType.Symbol.EQUAL)
 
-        val expr = expr()
+        val expr = if (assigned) expr() else Expr.None
+
+        mustSkip(TokenType.Symbol.SEMICOLON, "Expected a semicolon")
 
         val context = start..here()
 
@@ -195,6 +197,9 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun expr() =
         assign()
 
+    /**
+     * @return A single assignment expression if an `=` is present
+     */
     private fun assign(): Expr {
         val expr = additive()
 
@@ -218,7 +223,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
-     * @return A single additive binary expression if a '+' or '-' is present
+     * @return A single additive binary expression if a `+` or `-` is present
      */
     private fun additive(): Expr {
         var expr = multiplicative()
@@ -239,7 +244,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
-     * @return A single multiplicative binary expression if a '*', '/',  or '%' is present
+     * @return A single multiplicative binary expression if a `*`, `/`,  or `%` is present
      */
     private fun multiplicative(): Expr {
         var expr = prefix()
@@ -260,7 +265,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
-     * @return A single prefix unary expression if a '-' is present
+     * @return A single prefix unary expression if a `-` is present
      */
     private fun prefix(): Expr {
         if (match(TokenType.Symbol.DASH)) {

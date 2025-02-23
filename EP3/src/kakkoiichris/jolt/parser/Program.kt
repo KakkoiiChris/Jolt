@@ -14,4 +14,4 @@ package kakkoiichris.jolt.parser
  *
  * @property exprs The expressions of this program
  */
-class Program(private val exprs: Exprs) : Iterator<Expr> by exprs.iterator()
+class Program(private val exprs: List<Expr>) : Iterator<Expr> by exprs.iterator()

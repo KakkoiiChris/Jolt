@@ -135,9 +135,11 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single statement
      */
     private fun stmt() = when {
-        match(TokenType.Symbol.SEMICOLON) -> emptyStmt()
+        match(TokenType.Symbol.SEMICOLON)                      -> emptyStmt()
 
-        else                              -> expressionStmt()
+        matchAny(TokenType.Keyword.LET, TokenType.Keyword.VAR) -> declarationStmt()
+
+        else                                                   -> expressionStmt()
     }
 
     /**
@@ -149,6 +151,31 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         mustSkip(TokenType.Symbol.SEMICOLON, "Expected a semicolon")
 
         return Stmt.Empty(context)
+    }
+
+    /**
+     * @return A single empty statement
+     */
+    private fun declarationStmt(): Stmt.Declaration {
+        val start = here()
+
+        val constant = skip(TokenType.Keyword.LET)
+
+        if (!constant) {
+            mustSkip(TokenType.Keyword.VAR)
+        }
+
+        val name = name()
+
+        val assigned = skip(TokenType.Symbol.EQUAL)
+
+        val expr = if (assigned) expr() else Expr.None
+
+        mustSkip(TokenType.Symbol.SEMICOLON, "Expected a semicolon")
+
+        val context = start..here()
+
+        return Stmt.Declaration(context, constant, name, expr)
     }
 
     /**
@@ -168,7 +195,74 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single expression
      */
     private fun expr() =
-        additive()
+        assign()
+
+    /**
+     * @return A single assignment expression if an `=` is present
+     */
+    private fun assign(): Expr {
+        val expr = equality()
+
+        if (match(TokenType.Symbol.EQUAL)) {
+            if (expr !is Expr.Name) {
+                joltError("Cannot assign to '${expr.javaClass.simpleName}'!", source, expr.context)
+            }
+
+            val start = expr.context
+
+            mustSkip(TokenType.Symbol.EQUAL)
+
+            val value = equality()
+
+            val context = start..here()
+
+            return Expr.Assign(context, expr, value)
+        }
+
+        return expr
+    }
+
+    /**
+     * @return A single equality binary expression if a `==` or `!=` is present
+     */
+    private fun equality(): Expr {
+        var expr = relational()
+
+        while (matchAny(TokenType.Symbol.DOUBLE_EQUAL, TokenType.Symbol.EXCLAMATION_EQUAL)) {
+            val (_, type) = get<TokenType.Symbol>()
+
+            val operator = Expr.Binary.Operator[type]
+
+            val right = relational()
+
+            val context = expr.context..here()
+
+            expr = Expr.Binary(context, operator, expr, right)
+        }
+
+        return expr
+    }
+
+    /**
+     * @return A single relational binary expression if a `<`, `<=`, `>`, or `>=` is present
+     */
+    private fun relational(): Expr {
+        var expr = additive()
+
+        while (matchAny(TokenType.Symbol.LESS, TokenType.Symbol.LESS_EQUAL, TokenType.Symbol.GREATER, TokenType.Symbol.GREATER_EQUAL)) {
+            val (_, type) = get<TokenType.Symbol>()
+
+            val operator = Expr.Binary.Operator[type]
+
+            val right = additive()
+
+            val context = expr.context..here()
+
+            expr = Expr.Binary(context, operator, expr, right)
+        }
+
+        return expr
+    }
 
     /**
      * @return A single additive binary expression if a `+` or `-` is present
@@ -237,9 +331,15 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun terminal() = when {
         match<TokenType.Value>()           -> value()
 
+        match<TokenType.Name>()            -> name()
+
         match(TokenType.Symbol.LEFT_PAREN) -> nested()
 
-        else -> joltError("Invalid terminal starting with '${token.type}'", source, here())
+        else                               -> joltError(
+            "Invalid terminal starting with '${token.type}'",
+            source,
+            here()
+        )
     }
 
     /**
@@ -249,6 +349,15 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         val (context, type) = get<TokenType.Value>()
 
         return Expr.Value(context, type.value)
+    }
+
+    /**
+     * @return A single name expression
+     */
+    private fun name(): Expr.Name {
+        val (context, type) = get<TokenType.Name>()
+
+        return Expr.Name(context, type.value)
     }
 
     /**

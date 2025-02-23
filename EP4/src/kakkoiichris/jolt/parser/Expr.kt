@@ -12,11 +12,6 @@ package kakkoiichris.jolt.parser
 import kakkoiichris.jolt.lexer.Context
 
 /**
- * Convenient type alias for a list of expressions.
- */
-typealias Exprs = List<Expr>
-
-/**
  * Interface to represent all valid program expressions.
  */
 sealed interface Expr {

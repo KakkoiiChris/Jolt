@@ -17,7 +17,9 @@ import kakkoiichris.jolt.parser.Program
 import kakkoiichris.jolt.parser.Stmt
 
 /**
- * A class that executes programs by implementing the visitors of both the Expr and Stmt class.
+ * A class that executes programs via implementations of the visitors of both the Expr and Stmt class.
+ *
+ * @param source The program source used for retrieving error contexts
  */
 class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Double> {
     private val memory = Memory()
@@ -47,20 +49,20 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
     override fun visitEmptyStmt(stmt: Stmt.Empty) = Unit
 
     /**
-     * Registers a new variable in memory with the given value
+     * Registers a new variable in memory with the given constancy and value.
+     *
+     * @param stmt The statement to visit
      */
     override fun visitDeclarationStmt(stmt: Stmt.Declaration) {
-        val (_, constant, name, expr) = stmt
+        val (context, isConstant, name, expr) = stmt
 
         if (memory.isDeclared(name)) {
-            joltError("Variable name '$name' is already declared", source, name.context)
+            joltError("Variable name '${name.value}' is already declared", source, context)
         }
 
         val value = visit(expr)
 
-        val reference = Memory.Reference(constant, value)
-
-        memory[name.value] = reference
+        memory.declare(isConstant, name, value)
     }
 
     /**
@@ -74,6 +76,11 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
         println(last)
     }
 
+    /**
+     * @param expr The expression to visit
+     *
+     * @return [Double.NaN]
+     */
     override fun visitNoneExpr(expr: Expr.None) = Double.NaN
 
     /**
@@ -135,14 +142,14 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
      * @throws JoltError If the variable name is not present in memory, or if the variable is constant
      */
     override fun visitAssignExpr(expr: Expr.Assign): Double {
-        val value = visit(expr.value)
-
         val reference =
             memory[expr.name.value] ?: joltError("Name '${expr.name.value}' is not declared", source, expr.name.context)
 
         if (reference.isConstant) {
             joltError("Name '${expr.name.value}' is constant and cannot be reassigned", source, expr.name.context)
         }
+
+        val value = visit(expr.value)
 
         reference.value = value
 

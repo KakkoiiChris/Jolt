@@ -9,9 +9,7 @@
  */
 package kakkoiichris.jolt.lexer
 
-import kakkoiichris.jolt.JoltError
-import kakkoiichris.jolt.Source
-import kakkoiichris.jolt.joltError
+import kakkoiichris.jolt.*
 
 /**
  * A class that converts source code into tokens, one at a time via the [Iterator] mechanism.
@@ -24,6 +22,11 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
          * The null-terminator character, used to mark the end of the source.
          */
         private const val NUL = '\u0000'
+
+        private val literals = listOf(true, false)
+            .map(JoltValue.Companion::of)
+            .map(TokenType::Value)
+            .associateBy { toString() }
     }
 
     /**
@@ -339,13 +342,15 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
 
         val context = start..here()
 
-        val type = TokenType.Value(result.toDouble())
+        val value = JoltNum(result.toDouble())
+
+        val type = TokenType.Value(value)
 
         return Token(context, type)
     }
 
     /**
-     * @return A [token][Token] with a [Keyword][TokenType.Keyword] token type if the lexed word is a valid keyword, or a [Name][TokenType.Name] token type otherwise
+     * @return A [token][Token] with one of several word-based token types
      */
     private fun word(): Token<*> {
         val start = here()
@@ -359,13 +364,28 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
 
         val context = start..here()
 
-        val keyword = TokenType.Keyword
-            .entries
-            .firstOrNull { it.name.lowercase() == result }
-
-        val type = keyword ?: TokenType.Name(result)
+        val type = getWordType(result)
 
         return Token(context, type)
+    }
+
+    /**
+     * @param word The word to look up
+     *
+     * @return A [Keyword][TokenType.Keyword] token type if [word] is a valid keyword, a literal [Value][TokenType.Value] token type if [word] is a valid literal, or a [Name][TokenType.Name] token type otherwise
+     */
+    private fun getWordType(word: String): TokenType {
+        val keyword = TokenType.Keyword
+            .entries
+            .firstOrNull { it.name.lowercase() == word }
+
+        if (keyword != null) return keyword
+
+        val literal = literals[word]
+
+        if (literal != null) return literal
+
+        return TokenType.Name(word)
     }
 
     /**

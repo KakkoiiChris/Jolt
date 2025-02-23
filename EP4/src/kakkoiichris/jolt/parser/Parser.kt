@@ -130,7 +130,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun emptyStmt(): Stmt.Empty {
         val context = here()
 
-        mustSkip(TokenType.Symbol.SEMICOLON)
+        mustSkip(TokenType.Symbol.SEMICOLON, "Expected a semicolon")
 
         return Stmt.Empty(context)
     }

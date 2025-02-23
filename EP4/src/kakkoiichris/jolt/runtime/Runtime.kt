@@ -16,7 +16,9 @@ import kakkoiichris.jolt.parser.Program
 import kakkoiichris.jolt.parser.Stmt
 
 /**
- * A class that executes programs by implementing the visitors of both the Expr and Stmt class.
+ * A class that executes programs via implementations of the visitors of both the Expr and Stmt class.
+ *
+ * @param source The program source used for retrieving error contexts
  */
 class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Double> {
     /**

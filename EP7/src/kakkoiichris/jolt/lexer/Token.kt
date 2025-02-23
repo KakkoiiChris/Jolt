@@ -9,6 +9,8 @@
  */
 package kakkoiichris.jolt.lexer
 
+import kakkoiichris.jolt.JoltValue
+
 /**
  * A container for location data related to tokens.
  *
@@ -52,7 +54,7 @@ sealed interface TokenType {
      *
      * @property value The value of the token
      */
-    data class Value(val value: Double) : TokenType
+    data class Value(val value: JoltValue<*>) : TokenType
 
     /**
      * Token type that represents a name or variable.
@@ -83,6 +85,11 @@ sealed interface TokenType {
      */
     enum class Symbol(val rep: String) : TokenType {
         /**
+         * A double equal sign « `==` » used for equality.
+         */
+        DOUBLE_EQUAL("=="),
+
+        /**
          * An equals sign « `=` » used for declaration, assignment, default parameters, and named arguments.
          */
         EQUAL("="),
@@ -111,6 +118,31 @@ sealed interface TokenType {
          * A percent sign « `%` » used for remainders.
          */
         PERCENT("%"),
+
+        /**
+         * A less than or equal sign « `<=` » used for order comparisons.
+         */
+        LESS_EQUAL("<="),
+
+        /**
+         * A less than sign « `<` » used for order comparisons.
+         */
+        LESS("<"),
+
+        /**
+         * A greater than or equal sign « `>=` » used for remainder order comparisons.
+         */
+        GREATER_EQUAL(">="),
+
+        /**
+         * A greater than sign « `>` » used for order comparisons.
+         */
+        GREATER(">"),
+
+        /**
+         * A exclamation point equal sign « `!=` » used for inequality.
+         */
+        EXCLAMATION_EQUAL("!="),
 
         /**
          * A left parenthesis « `(` » used for nested expressions.
