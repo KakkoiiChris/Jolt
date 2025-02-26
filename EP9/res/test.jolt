@@ -1,1 +1,17 @@
-if (false) 42; else 69;
+true & true;
+true & false;
+false & true;
+false & false;
+
+true ^ true;
+true ^ false;
+false ^ true;
+false ^ false;
+
+true | true;
+true | false;
+false | true;
+false | false;
+
+!true;
+!false;

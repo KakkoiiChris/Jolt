@@ -86,12 +86,7 @@ sealed interface Expr {
             /**
              * The negation operator.
              */
-            NEGATE(TokenType.Symbol.DASH),
-
-            /**
-             * The not operator.
-             */
-            NOT(TokenType.Symbol.EXCLAMATION);
+            NEGATE(TokenType.Symbol.DASH);
 
             companion object {
                 /**
@@ -125,21 +120,6 @@ sealed interface Expr {
          * @property symbol The symbol token type associated with this operator
          */
         enum class Operator(val symbol: TokenType.Symbol) {
-            /**
-             * The or operator.
-             */
-            OR(TokenType.Symbol.PIPE),
-
-            /**
-             * The exclusive or operator.
-             */
-            XOR(TokenType.Symbol.CARET),
-
-            /**
-             * The and operator.
-             */
-            AND(TokenType.Symbol.AMPERSAND),
-
             /**
              * The equal operator.
              */

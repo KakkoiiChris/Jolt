@@ -1,17 +1,9 @@
-true & true;
-true & false;
-false & true;
-false & false;
+let a = 5;
+let b = 5;
 
-true ^ true;
-true ^ false;
-false ^ true;
-false ^ false;
-
-true | true;
-true | false;
-false | true;
-false | false;
-
-!true;
-!false;
+a == b;
+a != b;
+a < b;
+a <= b;
+a > b;
+a >= b;

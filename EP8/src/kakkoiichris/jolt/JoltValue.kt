@@ -5,7 +5,7 @@ import kotlin.math.floor
 interface JoltValue<X> {
     val value: X
 
-    val type:String
+    val type: String
 
     companion object {
         fun of(x: Any) = when (x) {

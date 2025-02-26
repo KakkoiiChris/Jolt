@@ -9,6 +9,8 @@
  */
 package kakkoiichris.jolt.lexer
 
+import kakkoiichris.jolt.JoltValue
+
 /**
  * A container for location data related to tokens.
  *
@@ -52,7 +54,7 @@ sealed interface TokenType {
      *
      * @property value The value of the token
      */
-    data class Value(val value: Double) : TokenType
+    data class Value(val value: JoltValue<*>) : TokenType
 
     /**
      * Token type that represents a name or variable.
@@ -74,6 +76,16 @@ sealed interface TokenType {
          * Variable Declarations
          */
         VAR,
+
+        /**
+         * If Statements
+         */
+        IF,
+
+        /**
+         * Else Statements
+         */
+        ELSE,
     }
 
     /**
@@ -82,6 +94,26 @@ sealed interface TokenType {
      * @property rep The string representation of the token
      */
     enum class Symbol(val rep: String) : TokenType {
+        /**
+         * A pipe « `|` » used for logical or.
+         */
+        PIPE("|"),
+
+        /**
+         * An ampersand « `&` » used for logical and.
+         */
+        AMPERSAND("&"),
+
+        /**
+         * A caret « `==` » used for logical exclusive or.
+         */
+        CARET("^"),
+
+        /**
+         * A double equal sign « `==` » used for equality.
+         */
+        DOUBLE_EQUAL("=="),
+
         /**
          * An equals sign « `=` » used for declaration, assignment, default parameters, and named arguments.
          */
@@ -113,6 +145,36 @@ sealed interface TokenType {
         PERCENT("%"),
 
         /**
+         * A less than or equal sign « `<=` » used for order comparisons.
+         */
+        LESS_EQUAL("<="),
+
+        /**
+         * A less than sign « `<` » used for order comparisons.
+         */
+        LESS("<"),
+
+        /**
+         * A greater than or equal sign « `>=` » used for remainder order comparisons.
+         */
+        GREATER_EQUAL(">="),
+
+        /**
+         * A greater than sign « `>` » used for order comparisons.
+         */
+        GREATER(">"),
+
+        /**
+         * An exclamation point equal sign « `!=` » used for inequality.
+         */
+        EXCLAMATION_EQUAL("!="),
+
+        /**
+         * An exclamation point « `!` » used for logical negation.
+         */
+        EXCLAMATION("!"),
+
+        /**
          * A left parenthesis « `(` » used for nested expressions.
          */
         LEFT_PAREN("("),
@@ -121,16 +183,6 @@ sealed interface TokenType {
          * A right parenthesis « `)` » used for nested expressions.
          */
         RIGHT_PAREN(")"),
-
-        /**
-         * A left brace « `{` » used for block statements.
-         */
-        LEFT_BRACE("{"),
-
-        /**
-         * A right brace « `}` » used for block statements.
-         */
-        RIGHT_BRACE("}"),
 
         /**
          * A semicolon « `;` » used for the ends of statements.

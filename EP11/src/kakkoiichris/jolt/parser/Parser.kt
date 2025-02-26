@@ -137,9 +137,9 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun stmt() = when {
         match(TokenType.Symbol.SEMICOLON)                      -> emptyStmt()
 
-        match(TokenType.Symbol.LEFT_BRACE)                     -> blockStmt()
-
         matchAny(TokenType.Keyword.LET, TokenType.Keyword.VAR) -> declarationStmt()
+
+        match(TokenType.Keyword.IF)                            -> ifElseStmt()
 
         else                                                   -> expressionStmt()
     }
@@ -156,26 +156,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
-     * @return A single block statement
-     */
-    private fun blockStmt(): Stmt.Block {
-        val start = here()
-
-        mustSkip(TokenType.Symbol.LEFT_BRACE)
-
-        val stmts = mutableListOf<Stmt>()
-
-        while (!skip(TokenType.Symbol.RIGHT_BRACE)) {
-            stmts += stmt()
-        }
-
-        val context = start..here()
-
-        return Stmt.Block(context, stmts)
-    }
-
-    /**
-     * @return A single empty statement
+     * @return A single declaration statement
      */
     private fun declarationStmt(): Stmt.Declaration {
         val start = here()
@@ -200,6 +181,28 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
+     * @return A single if else statement
+     */
+    private fun ifElseStmt(): Stmt.IfElse {
+        val start = here()
+
+        mustSkip(TokenType.Keyword.IF)
+        mustSkip(TokenType.Symbol.LEFT_PAREN, "")
+
+        val condition = expr()
+
+        mustSkip(TokenType.Symbol.RIGHT_PAREN, "")
+
+        val branchTrue = stmt()
+
+        val branchFalse = if (skip(TokenType.Keyword.ELSE)) stmt() else Stmt.Empty(here())
+
+        val context = start..here()
+
+        return Stmt.IfElse(context, condition, branchTrue, branchFalse)
+    }
+
+    /**
      * @return A single expression statement
      */
     private fun expressionStmt(): Stmt.Expression {
@@ -219,10 +222,10 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         assign()
 
     /**
-     * @return A single assignment expression if an `=` is present
+     * @return A single assignment expression if an `=` is present, or an [or] expression otherwise
      */
     private fun assign(): Expr {
-        val expr = additive()
+        val expr = or()
 
         if (match(TokenType.Symbol.EQUAL)) {
             if (expr !is Expr.Name) {
@@ -233,7 +236,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
             mustSkip(TokenType.Symbol.EQUAL)
 
-            val value = additive()
+            val value = or()
 
             val context = start..here()
 
@@ -244,7 +247,118 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
-     * @return A single additive binary expression if a `+` or `-` is present
+     * @return A series of or expressions if any `|` are present, or a [xor] expression otherwise
+     */
+    private fun or(): Expr {
+        var expr = xor()
+
+        while (match(TokenType.Symbol.PIPE)) {
+            val (_, type) = get<TokenType.Symbol>()
+
+            val operator = Expr.Binary.Operator[type]
+
+            val right = xor()
+
+            val context = expr.context..here()
+
+            expr = Expr.Binary(context, operator, expr, right)
+        }
+
+        return expr
+    }
+
+    /**
+     * @return A series of exclusive or expressions if any `^` are present, or an [and] expression otherwise
+     */
+    private fun xor(): Expr {
+        var expr = and()
+
+        while (match(TokenType.Symbol.CARET)) {
+            val (_, type) = get<TokenType.Symbol>()
+
+            val operator = Expr.Binary.Operator[type]
+
+            val right = and()
+
+            val context = expr.context..here()
+
+            expr = Expr.Binary(context, operator, expr, right)
+        }
+
+        return expr
+    }
+
+    /**
+     * @return A series of and expressions if any `&` are present, or an [equality] expression otherwise
+     */
+    private fun and(): Expr {
+        var expr = equality()
+
+        while (match(TokenType.Symbol.AMPERSAND)) {
+            val (_, type) = get<TokenType.Symbol>()
+
+            val operator = Expr.Binary.Operator[type]
+
+            val right = equality()
+
+            val context = expr.context..here()
+
+            expr = Expr.Binary(context, operator, expr, right)
+        }
+
+        return expr
+    }
+
+    /**
+     * @return A series of equality binary expressions if any `==` or `!=` are present, or a [relational] expression otherwise
+     */
+    private fun equality(): Expr {
+        var expr = relational()
+
+        while (matchAny(TokenType.Symbol.DOUBLE_EQUAL, TokenType.Symbol.EXCLAMATION_EQUAL)) {
+            val (_, type) = get<TokenType.Symbol>()
+
+            val operator = Expr.Binary.Operator[type]
+
+            val right = relational()
+
+            val context = expr.context..here()
+
+            expr = Expr.Binary(context, operator, expr, right)
+        }
+
+        return expr
+    }
+
+    /**
+     * @return A series of relational binary expressions if any `<`, `<=`, `>`, or `>=` are present, or a [additive] expression otherwise
+     */
+    private fun relational(): Expr {
+        var expr = additive()
+
+        while (matchAny(
+                TokenType.Symbol.LESS,
+                TokenType.Symbol.LESS_EQUAL,
+                TokenType.Symbol.GREATER,
+                TokenType.Symbol.GREATER_EQUAL
+            )
+        ) {
+            val (_, type) = get<TokenType.Symbol>()
+
+            val operator = Expr.Binary.Operator[type]
+
+            val right = additive()
+
+            val context = expr.context..here()
+
+            expr = Expr.Binary(context, operator, expr, right)
+        }
+
+        return expr
+    }
+
+    /**
+     * @return A series of additive binary expressions if any `+` or `-` are present, or a [multiplicative] expression otherwise
      */
     private fun additive(): Expr {
         var expr = multiplicative()
@@ -265,7 +379,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
-     * @return A single multiplicative binary expression if a `*`, `/`,  or `%` is present
+     * @return A series of multiplicative binary expressions if any `*`, `/`,  or `%` are present, or a [prefix] expression otherwise
      */
     private fun multiplicative(): Expr {
         var expr = prefix()
@@ -286,10 +400,10 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
-     * @return A single prefix unary expression if a `-` is present
+     * @return A single prefix unary expression if a `-` is present, or a [terminal] expression otherwise
      */
     private fun prefix(): Expr {
-        if (match(TokenType.Symbol.DASH)) {
+        if (matchAny(TokenType.Symbol.DASH, TokenType.Symbol.EXCLAMATION)) {
             val (start, type) = get<TokenType.Symbol>()
 
             val operator = Expr.Unary.Operator[type]

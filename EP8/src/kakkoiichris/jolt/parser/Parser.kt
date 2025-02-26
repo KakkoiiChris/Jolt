@@ -137,6 +137,8 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun stmt() = when {
         match(TokenType.Symbol.SEMICOLON)                      -> emptyStmt()
 
+        match(TokenType.Symbol.LEFT_BRACE)                     -> blockStmt()
+
         matchAny(TokenType.Keyword.LET, TokenType.Keyword.VAR) -> declarationStmt()
 
         else                                                   -> expressionStmt()
@@ -151,6 +153,25 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         mustSkip(TokenType.Symbol.SEMICOLON, "Expected a semicolon")
 
         return Stmt.Empty(context)
+    }
+
+    /**
+     * @return A single block statement
+     */
+    private fun blockStmt(): Stmt.Block {
+        val start = here()
+
+        mustSkip(TokenType.Symbol.LEFT_BRACE)
+
+        val stmts = mutableListOf<Stmt>()
+
+        while (!skip(TokenType.Symbol.RIGHT_BRACE)) {
+            stmts += stmt()
+        }
+
+        val context = start..here()
+
+        return Stmt.Block(context, stmts)
     }
 
     /**
@@ -201,7 +222,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single assignment expression if an `=` is present
      */
     private fun assign(): Expr {
-        val expr = or()
+        val expr = equality()
 
         if (match(TokenType.Symbol.EQUAL)) {
             if (expr !is Expr.Name) {
@@ -212,65 +233,11 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
             mustSkip(TokenType.Symbol.EQUAL)
 
-            val value = or()
+            val value = equality()
 
             val context = start..here()
 
             return Expr.Assign(context, expr, value)
-        }
-
-        return expr
-    }
-
-    private fun or(): Expr {
-        var expr = xor()
-
-        while (match(TokenType.Symbol.PIPE)) {
-            val (_, type) = get<TokenType.Symbol>()
-
-            val operator = Expr.Binary.Operator[type]
-
-            val right = xor()
-
-            val context = expr.context..here()
-
-            expr = Expr.Binary(context, operator, expr, right)
-        }
-
-        return expr
-    }
-
-    private fun xor(): Expr {
-        var expr = and()
-
-        while (match(TokenType.Symbol.CARET)) {
-            val (_, type) = get<TokenType.Symbol>()
-
-            val operator = Expr.Binary.Operator[type]
-
-            val right = and()
-
-            val context = expr.context..here()
-
-            expr = Expr.Binary(context, operator, expr, right)
-        }
-
-        return expr
-    }
-
-    private fun and(): Expr {
-        var expr = equality()
-
-        while (match(TokenType.Symbol.AMPERSAND)) {
-            val (_, type) = get<TokenType.Symbol>()
-
-            val operator = Expr.Binary.Operator[type]
-
-            val right = equality()
-
-            val context = expr.context..here()
-
-            expr = Expr.Binary(context, operator, expr, right)
         }
 
         return expr
@@ -303,13 +270,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun relational(): Expr {
         var expr = additive()
 
-        while (matchAny(
-                TokenType.Symbol.LESS,
-                TokenType.Symbol.LESS_EQUAL,
-                TokenType.Symbol.GREATER,
-                TokenType.Symbol.GREATER_EQUAL
-            )
-        ) {
+        while (matchAny(TokenType.Symbol.LESS, TokenType.Symbol.LESS_EQUAL, TokenType.Symbol.GREATER, TokenType.Symbol.GREATER_EQUAL)) {
             val (_, type) = get<TokenType.Symbol>()
 
             val operator = Expr.Binary.Operator[type]
@@ -370,7 +331,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
      * @return A single prefix unary expression if a `-` is present
      */
     private fun prefix(): Expr {
-        if (matchAny(TokenType.Symbol.DASH, TokenType.Symbol.EXCLAMATION)) {
+        if (match(TokenType.Symbol.DASH)) {
             val (start, type) = get<TokenType.Symbol>()
 
             val operator = Expr.Unary.Operator[type]

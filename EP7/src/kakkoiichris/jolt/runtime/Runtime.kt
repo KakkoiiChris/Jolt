@@ -9,8 +9,9 @@
  */
 package kakkoiichris.jolt.runtime
 
-import kakkoiichris.jolt.*
-import kakkoiichris.jolt.lexer.Context
+import kakkoiichris.jolt.JoltError
+import kakkoiichris.jolt.Source
+import kakkoiichris.jolt.joltError
 import kakkoiichris.jolt.parser.Expr
 import kakkoiichris.jolt.parser.Program
 import kakkoiichris.jolt.parser.Stmt
@@ -20,10 +21,10 @@ import kakkoiichris.jolt.parser.Stmt
  *
  * @param source The program source used for retrieving error contexts
  */
-class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<JoltValue<*>> {
+class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Double> {
     private val memory = Memory()
 
-    private var last: JoltValue<*> = JoltNum(0.0)
+    private var last = 0.0
 
     /**
      * Visits each of the program's statements in order.
@@ -32,7 +33,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
      *
      * @return The value of the last expression
      */
-    fun run(program: Program): JoltValue<*> {
+    fun run(program: Program): Double {
         for (stmt in program) {
             visit(stmt)
         }
@@ -46,6 +47,24 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
      * @param stmt The statement to visit
      */
     override fun visitEmptyStmt(stmt: Stmt.Empty) = Unit
+
+    /**
+     * Visits all the inner statements with a new memory scope.
+     *
+     * @param stmt The statement to visit
+     */
+    override fun visitBlockStmt(stmt: Stmt.Block) {
+        try {
+            memory.push()
+
+            for (subStmt in stmt.stmts) {
+                visit(subStmt)
+            }
+        }
+        finally {
+            memory.pop()
+        }
+    }
 
     /**
      * Registers a new variable in memory with the given constancy and value.
@@ -80,7 +99,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
      *
      * @return [Double.NaN]
      */
-    override fun visitNoneExpr(expr: Expr.None) = JoltNum(Double.NaN)
+    override fun visitNoneExpr(expr: Expr.None) = Double.NaN
 
     /**
      * @param expr The expression to visit
@@ -94,7 +113,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
      *
      * @throws JoltError If the variable name is not present in memory
      */
-    override fun visitNameExpr(expr: Expr.Name): JoltValue<*> {
+    override fun visitNameExpr(expr: Expr.Name): Double {
         val reference = memory[expr.value] ?: joltError("Name '${expr.value}' is not declared", source, expr.context)
 
         return reference.value
@@ -113,19 +132,8 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
      * @return The result of the operator on its operand
      */
     override fun visitUnaryExpr(expr: Expr.Unary) = when (expr.operator) {
-        Expr.Unary.Operator.NEGATE -> when (val operand = visit(expr.operand)) {
-            is JoltNum -> JoltNum(-operand.value)
-
-            else       -> invalidUnaryOperand(operand, expr.operator, expr.operand.context)
-        }
+        Expr.Unary.Operator.NEGATE -> -visit(expr.operand)
     }
-
-    private fun invalidUnaryOperand(operand: JoltValue<*>, operator: Expr.Unary.Operator, context: Context): Nothing =
-        joltError(
-            "Operand of type '${operand.type}' invalid for unary '${operator.symbol}' operator",
-            source,
-            context
-        )
 
     /**
      * @param expr The expression to visit
@@ -133,119 +141,16 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
      * @return The result of the operator on its operands
      */
     override fun visitBinaryExpr(expr: Expr.Binary) = when (expr.operator) {
-        Expr.Binary.Operator.EQUAL         -> when (val operandLeft = visit(expr.operandLeft)) {
-            is JoltNum -> when (val operandRight = visit(expr.operandRight)) {
-                is JoltNum -> JoltBool(operandLeft.value == operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
-            }
+        Expr.Binary.Operator.ADD       -> visit(expr.operandLeft) + visit(expr.operandRight)
 
-            else       -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
-        }
+        Expr.Binary.Operator.SUBTRACT  -> visit(expr.operandLeft) - visit(expr.operandRight)
 
-        Expr.Binary.Operator.NOT_EQUAL     -> when (val operandLeft = visit(expr.operandLeft)) {
-            is JoltNum -> when (val operandRight = visit(expr.operandRight)) {
-                is JoltNum -> JoltBool(operandLeft.value != operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
-            }
+        Expr.Binary.Operator.MULTIPLY  -> visit(expr.operandLeft) * visit(expr.operandRight)
 
-            else       -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
-        }
+        Expr.Binary.Operator.DIVIDE    -> visit(expr.operandLeft) / visit(expr.operandRight)
 
-        Expr.Binary.Operator.LESS          -> when (val operandLeft = visit(expr.operandLeft)) {
-            is JoltNum -> when (val operandRight = visit(expr.operandRight)) {
-                is JoltNum -> JoltBool(operandLeft.value < operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
-            }
-
-            else       -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
-        }
-
-        Expr.Binary.Operator.LESS_EQUAL    -> when (val operandLeft = visit(expr.operandLeft)) {
-            is JoltNum -> when (val operandRight = visit(expr.operandRight)) {
-                is JoltNum -> JoltBool(operandLeft.value <= operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
-            }
-
-            else       -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
-        }
-
-        Expr.Binary.Operator.GREATER       -> when (val operandLeft = visit(expr.operandLeft)) {
-            is JoltNum -> when (val operandRight = visit(expr.operandRight)) {
-                is JoltNum -> JoltBool(operandLeft.value > operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
-            }
-
-            else       -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
-        }
-
-        Expr.Binary.Operator.GREATER_EQUAL -> when (val operandLeft = visit(expr.operandLeft)) {
-            is JoltNum -> when (val operandRight = visit(expr.operandRight)) {
-                is JoltNum -> JoltBool(operandLeft.value >= operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
-            }
-
-            else       -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
-        }
-
-        Expr.Binary.Operator.ADD           -> when (val operandLeft = visit(expr.operandLeft)) {
-            is JoltNum -> when (val operandRight = visit(expr.operandRight)) {
-                is JoltNum -> JoltNum(operandLeft.value + operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
-            }
-
-            else       -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
-        }
-
-        Expr.Binary.Operator.SUBTRACT      -> when (val operandLeft = visit(expr.operandLeft)) {
-            is JoltNum -> when (val operandRight = visit(expr.operandRight)) {
-                is JoltNum -> JoltNum(operandLeft.value - operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
-            }
-
-            else       -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
-        }
-
-        Expr.Binary.Operator.MULTIPLY      -> when (val operandLeft = visit(expr.operandLeft)) {
-            is JoltNum -> when (val operandRight = visit(expr.operandRight)) {
-                is JoltNum -> JoltNum(operandLeft.value * operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
-            }
-
-            else       -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
-        }
-
-        Expr.Binary.Operator.DIVIDE        -> when (val operandLeft = visit(expr.operandLeft)) {
-            is JoltNum -> when (val operandRight = visit(expr.operandRight)) {
-                is JoltNum -> JoltNum(operandLeft.value / operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
-            }
-
-            else       -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
-        }
-
-        Expr.Binary.Operator.REMAINDER     -> when (val operandLeft = visit(expr.operandLeft)) {
-            is JoltNum -> when (val operandRight = visit(expr.operandRight)) {
-                is JoltNum -> JoltNum(operandLeft.value % operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
-            }
-
-            else       -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
-        }
+        Expr.Binary.Operator.REMAINDER -> visit(expr.operandLeft) % visit(expr.operandRight)
     }
-
-    private fun invalidLeftOperand(operand: JoltValue<*>, operator: Expr.Binary.Operator, context: Context): Nothing =
-        joltError(
-            "Left operand of type '${operand.type}' invalid for binary '${operator.symbol}' operator",
-            source,
-            context
-        )
-
-    private fun invalidRightOperand(operand: JoltValue<*>, operator: Expr.Binary.Operator, context: Context): Nothing =
-        joltError(
-            "Right operand of type '${operand.type}' invalid for binary '${operator.symbol}' operator",
-            source,
-            context
-        )
 
     /**
      * Changes the value of the variable stored in memory.
@@ -254,9 +159,9 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
      *
      * @throws JoltError If the variable name is not present in memory, or if the variable is constant
      */
-    override fun visitAssignExpr(expr: Expr.Assign): JoltValue<*> {
-        val reference =
-            memory[expr.name.value] ?: joltError("Name '${expr.name.value}' is not declared", source, expr.name.context)
+    override fun visitAssignExpr(expr: Expr.Assign): Double {
+        val reference = memory[expr.name.value]
+            ?: joltError("Name '${expr.name.value}' is not declared", source, expr.name.context)
 
         if (reference.isConstant) {
             joltError("Name '${expr.name.value}' is constant and cannot be reassigned", source, expr.name.context)
