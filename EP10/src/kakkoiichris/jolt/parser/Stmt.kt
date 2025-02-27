@@ -42,9 +42,18 @@ sealed interface Stmt {
     }
 
     /**
+     * Represents a block statement with multiple statements.
+     */
+    data class Block(override val context: Context, val stmts: Stmts) : Stmt {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitBlockStmt(this)
+    }
+
+    /**
      * Represents a declaration statement that creates a variable with a given value.
      */
-    data class Declaration(override val context: Context, val constant: Boolean, val name: Expr.Name, val expr: Expr) : Stmt {
+    data class Declaration(override val context: Context, val constant: Boolean, val name: Expr.Name, val expr: Expr) :
+        Stmt {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitDeclarationStmt(this)
     }
@@ -52,7 +61,8 @@ sealed interface Stmt {
     /**
      * Represents a declaration statement that creates a variable with a given value.
      */
-    data class IfElse(override val context: Context, val condition: Expr, val branchTrue:Stmt, val branchFalse:Stmt) : Stmt {
+    data class IfElse(override val context: Context, val condition: Expr, val branchTrue: Stmt, val branchFalse: Stmt) :
+        Stmt {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitIfElseStmt(this)
     }
@@ -89,6 +99,13 @@ sealed interface Stmt {
         fun visitEmptyStmt(stmt: Empty): X
 
         /**
+         * Visits a block statement.
+         *
+         * @param stmt The statement to visit
+         */
+        fun visitBlockStmt(stmt: Block): X
+
+        /**
          * Visits a declaration statement.
          *
          * @param stmt The statement to visit
@@ -96,7 +113,7 @@ sealed interface Stmt {
         fun visitDeclarationStmt(stmt: Declaration): X
 
         /**
-         * Visits an if-else statement.
+         * Visits a declaration statement.
          *
          * @param stmt The statement to visit
          */

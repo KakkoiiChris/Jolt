@@ -136,6 +136,12 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
 
             else       -> invalidUnaryOperand(operand, expr.operator, expr.operand.context)
         }
+
+        Expr.Unary.Operator.NOT    -> when (val operand = visit(expr.operand)) {
+            is JoltBool -> JoltBool(!operand.value)
+
+            else        -> invalidUnaryOperand(operand, expr.operator, expr.operand.context)
+        }
     }
 
     private fun invalidUnaryOperand(operand: JoltValue<*>, operator: Expr.Unary.Operator, context: Context): Nothing =
@@ -151,22 +157,59 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
      * @return The result of the operator on its operands
      */
     override fun visitBinaryExpr(expr: Expr.Binary) = when (expr.operator) {
-        Expr.Binary.Operator.EQUAL         -> when (val operandLeft = visit(expr.operandLeft)) {
-            is JoltNum -> when (val operandRight = visit(expr.operandRight)) {
-                is JoltNum -> JoltBool(operandLeft.value == operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
+        Expr.Binary.Operator.OR            -> when (val operandLeft = visit(expr.operandLeft)) {
+            is JoltBool -> when (val operandRight = visit(expr.operandRight)) {
+                is JoltBool -> JoltBool(operandLeft.value || operandRight.value)
+                else        -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
             }
 
-            else       -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
+            else        -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
+        }
+
+        Expr.Binary.Operator.XOR           -> when (val operandLeft = visit(expr.operandLeft)) {
+            is JoltBool -> when (val operandRight = visit(expr.operandRight)) {
+                is JoltBool -> JoltBool(operandLeft.value xor operandRight.value)
+                else        -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
+            }
+
+            else        -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
+        }
+
+        Expr.Binary.Operator.AND           -> when (val operandLeft = visit(expr.operandLeft)) {
+            is JoltBool -> when (val operandRight = visit(expr.operandRight)) {
+                is JoltBool -> JoltBool(operandLeft.value && operandRight.value)
+                else        -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
+            }
+
+            else        -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
+        }
+
+        Expr.Binary.Operator.EQUAL         -> when (val operandLeft = visit(expr.operandLeft)) {
+            is JoltBool -> when (val operandRight = visit(expr.operandRight)) {
+                is JoltBool -> JoltBool(operandLeft.value == operandRight.value)
+                else        -> JoltBool(false)
+            }
+
+            is JoltNum  -> when (val operandRight = visit(expr.operandRight)) {
+                is JoltNum -> JoltBool(operandLeft.value == operandRight.value)
+                else       -> JoltBool(false)
+            }
+
+            else        -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
         }
 
         Expr.Binary.Operator.NOT_EQUAL     -> when (val operandLeft = visit(expr.operandLeft)) {
-            is JoltNum -> when (val operandRight = visit(expr.operandRight)) {
-                is JoltNum -> JoltBool(operandLeft.value != operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
+            is JoltBool -> when (val operandRight = visit(expr.operandRight)) {
+                is JoltBool -> JoltBool(operandLeft.value != operandRight.value)
+                else        -> JoltBool(true)
             }
 
-            else       -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
+            is JoltNum  -> when (val operandRight = visit(expr.operandRight)) {
+                is JoltNum -> JoltBool(operandLeft.value != operandRight.value)
+                else       -> JoltBool(true)
+            }
+
+            else        -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
         }
 
         Expr.Binary.Operator.LESS          -> when (val operandLeft = visit(expr.operandLeft)) {

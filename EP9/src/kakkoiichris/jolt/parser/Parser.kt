@@ -249,7 +249,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun or(): Expr {
         var expr = xor()
 
-        while (match(TokenType.Symbol.DOUBLE_EQUAL)) {
+        while (match(TokenType.Symbol.PIPE)) {
             val (_, type) = get<TokenType.Symbol>()
 
             val operator = Expr.Binary.Operator[type]
@@ -270,7 +270,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun xor(): Expr {
         var expr = and()
 
-        while (match(TokenType.Symbol.DOUBLE_EQUAL)) {
+        while (match(TokenType.Symbol.CARET)) {
             val (_, type) = get<TokenType.Symbol>()
 
             val operator = Expr.Binary.Operator[type]
@@ -291,7 +291,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun and(): Expr {
         var expr = equality()
 
-        while (match(TokenType.Symbol.DOUBLE_EQUAL)) {
+        while (match(TokenType.Symbol.AMPERSAND)) {
             val (_, type) = get<TokenType.Symbol>()
 
             val operator = Expr.Binary.Operator[type]

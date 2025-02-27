@@ -48,6 +48,24 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
     override fun visitEmptyStmt(stmt: Stmt.Empty) = Unit
 
     /**
+     * Visits all the inner statements with a new memory scope.
+     *
+     * @param stmt The statement to visit
+     */
+    override fun visitBlockStmt(stmt: Stmt.Block) {
+        try {
+            memory.push()
+
+            for (subStmt in stmt.stmts) {
+                visit(subStmt)
+            }
+        }
+        finally {
+            memory.pop()
+        }
+    }
+
+    /**
      * Registers a new variable in memory with the given constancy and value.
      *
      * @param stmt The statement to visit
@@ -65,15 +83,13 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
     }
 
     /**
-     * Executes one statement if the condition is `true`, or another statement otherwise.
      *
-     * @param stmt The statement to visit
      */
     override fun visitIfElseStmt(stmt: Stmt.IfElse) {
         val condition = visit(stmt.condition)
 
         if (condition !is JoltBool) {
-            joltError("Condition must be of type 'bool'", source, stmt.condition.context)
+            joltError("", source, stmt.condition.context)
         }
 
         if (condition.value) {
@@ -189,12 +205,12 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         Expr.Binary.Operator.EQUAL         -> when (val operandLeft = visit(expr.operandLeft)) {
             is JoltBool -> when (val operandRight = visit(expr.operandRight)) {
                 is JoltBool -> JoltBool(operandLeft.value == operandRight.value)
-                else        -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
+                else        -> JoltBool(false)
             }
 
             is JoltNum  -> when (val operandRight = visit(expr.operandRight)) {
                 is JoltNum -> JoltBool(operandLeft.value == operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
+                else       -> JoltBool(false)
             }
 
             else        -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
@@ -203,12 +219,12 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         Expr.Binary.Operator.NOT_EQUAL     -> when (val operandLeft = visit(expr.operandLeft)) {
             is JoltBool -> when (val operandRight = visit(expr.operandRight)) {
                 is JoltBool -> JoltBool(operandLeft.value != operandRight.value)
-                else        -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
+                else        -> JoltBool(true)
             }
 
             is JoltNum  -> when (val operandRight = visit(expr.operandRight)) {
                 is JoltNum -> JoltBool(operandLeft.value != operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
+                else       -> JoltBool(true)
             }
 
             else        -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
@@ -318,8 +334,8 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
      * @throws JoltError If the variable name is not present in memory, or if the variable is constant
      */
     override fun visitAssignExpr(expr: Expr.Assign): JoltValue<*> {
-        val reference = memory[expr.name.value]
-            ?: joltError("Name '${expr.name.value}' is not declared", source, expr.name.context)
+        val reference =
+            memory[expr.name.value] ?: joltError("Name '${expr.name.value}' is not declared", source, expr.name.context)
 
         if (reference.isConstant) {
             joltError("Name '${expr.name.value}' is constant and cannot be reassigned", source, expr.name.context)
