@@ -100,14 +100,14 @@ sealed interface TokenType {
         PIPE("|"),
 
         /**
+         * A caret « `^` » used for logical exclusive or.
+         */
+        CARET("^"),
+
+        /**
          * An ampersand « `&` » used for logical and.
          */
         AMPERSAND("&"),
-
-        /**
-         * A caret « `==` » used for logical exclusive or.
-         */
-        CARET("^"),
 
         /**
          * A double equal sign « `==` » used for equality.
@@ -170,7 +170,7 @@ sealed interface TokenType {
         EXCLAMATION_EQUAL("!="),
 
         /**
-         * An exclamation point « `!` » used for logical negation.
+         * An exclamation mark « `!` » used logical negation.
          */
         EXCLAMATION("!"),
 
@@ -183,6 +183,16 @@ sealed interface TokenType {
          * A right parenthesis « `)` » used for nested expressions.
          */
         RIGHT_PAREN(")"),
+
+        /**
+         * A left brace « `{` » used for block statements.
+         */
+        LEFT_BRACE("{"),
+
+        /**
+         * A right brace « `}` » used for block statements.
+         */
+        RIGHT_BRACE("}"),
 
         /**
          * A semicolon « `;` » used for the ends of statements.

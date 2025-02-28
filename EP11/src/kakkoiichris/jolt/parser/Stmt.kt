@@ -42,17 +42,37 @@ sealed interface Stmt {
     }
 
     /**
-     * Represents a declaration statement that creates a variable with a given value.
+     * Represents a block statement with multiple statements.
+     *
+     * @property stmts The statements inside this block
      */
-    data class Declaration(override val context: Context, val constant: Boolean, val name: Expr.Name, val expr: Expr) : Stmt {
+    data class Block(override val context: Context, val stmts: Stmts) : Stmt {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitBlockStmt(this)
+    }
+
+    /**
+     * Represents a declaration statement that creates a variable with a given value.
+     *
+     * @property constant Whether the variable is constant or not
+     * @property name The name of the variable
+     * @property expr The value to assign to the variable
+     */
+    data class Declaration(override val context: Context, val constant: Boolean, val name: Expr.Name, val expr: Expr) :
+        Stmt {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitDeclarationStmt(this)
     }
 
     /**
-     * Represents a declaration statement that creates a variable with a given value.
+     * Represents an if-else statement with up to two branches.
+     *
+     * @property condition The condition to check
+     * @property branchTrue The statement to visit if the condition is true
+     * @property branchFalse The statement to visit if the condition is false
      */
-    data class IfElse(override val context: Context, val condition: Expr, val branchTrue:Stmt, val branchFalse:Stmt) : Stmt {
+    data class IfElse(override val context: Context, val condition: Expr, val branchTrue: Stmt, val branchFalse: Stmt) :
+        Stmt {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitIfElseStmt(this)
     }
@@ -87,6 +107,13 @@ sealed interface Stmt {
          * @param stmt The statement to visit
          */
         fun visitEmptyStmt(stmt: Empty): X
+
+        /**
+         * Visits a block statement.
+         *
+         * @param stmt The statement to visit
+         */
+        fun visitBlockStmt(stmt: Block): X
 
         /**
          * Visits a declaration statement.

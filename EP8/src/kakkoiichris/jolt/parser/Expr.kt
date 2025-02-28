@@ -30,11 +30,14 @@ sealed interface Expr {
      */
     fun <X> accept(visitor: Visitor<X>): X
 
-    data object None:Expr{
+    /**
+     * Represents an empty expression, for use with default variable declarations.
+     */
+    data object Empty: Expr{
         override val context = Context.none
 
         override fun <X> accept(visitor: Visitor<X>): X =
-            visitor.visitNoneExpr(this)
+            visitor.visitEmptyExpr(this)
     }
 
     /**
@@ -215,7 +218,7 @@ sealed interface Expr {
          *
          * @param expr The expression to visit
          */
-        fun visitNoneExpr(expr: None): X
+        fun visitEmptyExpr(expr: Empty): X
 
         /**
          * Visits a value expression.

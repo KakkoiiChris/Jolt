@@ -192,7 +192,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         val assigned = skip(TokenType.Symbol.EQUAL)
 
-        val expr = if (assigned) expr() else Expr.None
+        val expr = if (assigned) expr() else Expr.Empty
 
         mustSkip(TokenType.Symbol.SEMICOLON, "Expected a semicolon")
 

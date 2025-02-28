@@ -48,6 +48,24 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
     override fun visitEmptyStmt(stmt: Stmt.Empty) = Unit
 
     /**
+     * Visits all the inner statements with a new memory scope.
+     *
+     * @param stmt The statement to visit
+     */
+    override fun visitBlockStmt(stmt: Stmt.Block) {
+        try {
+            memory.push()
+
+            for (subStmt in stmt.stmts) {
+                visit(subStmt)
+            }
+        }
+        finally {
+            memory.pop()
+        }
+    }
+
+    /**
      * Registers a new variable in memory with the given constancy and value.
      *
      * @param stmt The statement to visit
@@ -65,15 +83,13 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
     }
 
     /**
-     * Executes one statement if the condition is `true`, or another statement otherwise.
      *
-     * @param stmt The statement to visit
      */
     override fun visitIfElseStmt(stmt: Stmt.IfElse) {
         val condition = visit(stmt.condition)
 
         if (condition !is JoltBool) {
-            joltError("Condition must be of type 'bool'", source, stmt.condition.context)
+            joltError("", source, stmt.condition.context)
         }
 
         if (condition.value) {
@@ -100,7 +116,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
      *
      * @return [Double.NaN]
      */
-    override fun visitNoneExpr(expr: Expr.None) = JoltNum(Double.NaN)
+    override fun visitEmptyExpr(expr: Expr.Empty) = JoltNum(Double.NaN)
 
     /**
      * @param expr The expression to visit
@@ -146,6 +162,13 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         }
     }
 
+    /**
+     * Helper function for errors when the operand is invalid for a unary operator.
+     *
+     * @param operand The invalid operand to display
+     * @param operator The operator to display
+     * @param context The context for the error
+     */
     private fun invalidUnaryOperand(operand: JoltValue<*>, operator: Expr.Unary.Operator, context: Context): Nothing =
         joltError(
             "Operand of type '${operand.type}' invalid for unary '${operator.symbol}' operator",
@@ -189,12 +212,12 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         Expr.Binary.Operator.EQUAL         -> when (val operandLeft = visit(expr.operandLeft)) {
             is JoltBool -> when (val operandRight = visit(expr.operandRight)) {
                 is JoltBool -> JoltBool(operandLeft.value == operandRight.value)
-                else        -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
+                else        -> JoltBool(false)
             }
 
             is JoltNum  -> when (val operandRight = visit(expr.operandRight)) {
                 is JoltNum -> JoltBool(operandLeft.value == operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
+                else       -> JoltBool(false)
             }
 
             else        -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
@@ -203,12 +226,12 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         Expr.Binary.Operator.NOT_EQUAL     -> when (val operandLeft = visit(expr.operandLeft)) {
             is JoltBool -> when (val operandRight = visit(expr.operandRight)) {
                 is JoltBool -> JoltBool(operandLeft.value != operandRight.value)
-                else        -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
+                else        -> JoltBool(true)
             }
 
             is JoltNum  -> when (val operandRight = visit(expr.operandRight)) {
                 is JoltNum -> JoltBool(operandLeft.value != operandRight.value)
-                else       -> invalidRightOperand(operandRight, expr.operator, expr.operandRight.context)
+                else       -> JoltBool(true)
             }
 
             else        -> invalidLeftOperand(operandLeft, expr.operator, expr.operandLeft.context)
@@ -296,6 +319,13 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         }
     }
 
+    /**
+     * Helper function for errors when the left operand is invalid for a binary operator.
+     *
+     * @param operand The invalid operand to display
+     * @param operator The operator to display
+     * @param context The context for the error
+     */
     private fun invalidLeftOperand(operand: JoltValue<*>, operator: Expr.Binary.Operator, context: Context): Nothing =
         joltError(
             "Left operand of type '${operand.type}' invalid for binary '${operator.symbol}' operator",
@@ -303,6 +333,13 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
             context
         )
 
+    /**
+     * Helper function for errors when the right operand is invalid for a binary operator.
+     *
+     * @param operand The invalid operand to display
+     * @param operator The operator to display
+     * @param context The context for the error
+     */
     private fun invalidRightOperand(operand: JoltValue<*>, operator: Expr.Binary.Operator, context: Context): Nothing =
         joltError(
             "Right operand of type '${operand.type}' invalid for binary '${operator.symbol}' operator",
@@ -318,8 +355,8 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
      * @throws JoltError If the variable name is not present in memory, or if the variable is constant
      */
     override fun visitAssignExpr(expr: Expr.Assign): JoltValue<*> {
-        val reference = memory[expr.name.value]
-            ?: joltError("Name '${expr.name.value}' is not declared", source, expr.name.context)
+        val reference =
+            memory[expr.name.value] ?: joltError("Name '${expr.name.value}' is not declared", source, expr.name.context)
 
         if (reference.isConstant) {
             joltError("Name '${expr.name.value}' is constant and cannot be reassigned", source, expr.name.context)

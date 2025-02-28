@@ -43,6 +43,10 @@ sealed interface Stmt {
 
     /**
      * Represents a declaration statement that creates a variable with a given value.
+     *
+     * @property constant Whether the variable is constant or not
+     * @property name The name of the variable
+     * @property expr The value to assign to the variable
      */
     data class Declaration(override val context: Context, val constant: Boolean, val name: Expr.Name, val expr: Expr) : Stmt {
         override fun <X> accept(visitor: Visitor<X>): X =

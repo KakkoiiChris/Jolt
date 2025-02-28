@@ -116,7 +116,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
      *
      * @return [Double.NaN]
      */
-    override fun visitNoneExpr(expr: Expr.None) = JoltNum(Double.NaN)
+    override fun visitEmptyExpr(expr: Expr.Empty) = JoltNum(Double.NaN)
 
     /**
      * @param expr The expression to visit
@@ -162,6 +162,13 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         }
     }
 
+    /**
+     * Helper function for errors when the operand is invalid for a unary operator.
+     *
+     * @param operand The invalid operand to display
+     * @param operator The operator to display
+     * @param context The context for the error
+     */
     private fun invalidUnaryOperand(operand: JoltValue<*>, operator: Expr.Unary.Operator, context: Context): Nothing =
         joltError(
             "Operand of type '${operand.type}' invalid for unary '${operator.symbol}' operator",
@@ -312,6 +319,13 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         }
     }
 
+    /**
+     * Helper function for errors when the left operand is invalid for a binary operator.
+     *
+     * @param operand The invalid operand to display
+     * @param operator The operator to display
+     * @param context The context for the error
+     */
     private fun invalidLeftOperand(operand: JoltValue<*>, operator: Expr.Binary.Operator, context: Context): Nothing =
         joltError(
             "Left operand of type '${operand.type}' invalid for binary '${operator.symbol}' operator",
@@ -319,6 +333,13 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
             context
         )
 
+    /**
+     * Helper function for errors when the right operand is invalid for a binary operator.
+     *
+     * @param operand The invalid operand to display
+     * @param operator The operator to display
+     * @param context The context for the error
+     */
     private fun invalidRightOperand(operand: JoltValue<*>, operator: Expr.Binary.Operator, context: Context): Nothing =
         joltError(
             "Right operand of type '${operand.type}' invalid for binary '${operator.symbol}' operator",

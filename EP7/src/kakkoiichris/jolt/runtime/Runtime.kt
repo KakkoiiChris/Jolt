@@ -99,7 +99,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Dou
      *
      * @return [Double.NaN]
      */
-    override fun visitNoneExpr(expr: Expr.None) = Double.NaN
+    override fun visitEmptyExpr(expr: Expr.Empty) = Double.NaN
 
     /**
      * @param expr The expression to visit

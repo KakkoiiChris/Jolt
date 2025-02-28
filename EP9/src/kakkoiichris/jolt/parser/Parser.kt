@@ -190,7 +190,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         val assigned = skip(TokenType.Symbol.EQUAL)
 
-        val expr = if (assigned) expr() else Expr.None
+        val expr = if (assigned) expr() else Expr.Empty
 
         mustSkip(TokenType.Symbol.SEMICOLON, "Expected a semicolon")
 
@@ -244,7 +244,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
-     * @return A single equality binary expression if a `==` or `!=` is present
+     * @return A single logical or binary expression if a `|` is present
      */
     private fun or(): Expr {
         var expr = xor()
@@ -265,7 +265,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
-     * @return A single equality binary expression if a `==` or `!=` is present
+     * @return A single logical exclusive or binary expression if a `^` is present
      */
     private fun xor(): Expr {
         var expr = and()
@@ -286,7 +286,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
-     * @return A single equality binary expression if a `==` or `!=` is present
+     * @return A single logical and binary expression if an `&` is present
      */
     private fun and(): Expr {
         var expr = equality()
@@ -391,7 +391,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
-     * @return A single prefix unary expression if a `-` is present
+     * @return A single prefix unary expression if a `-` or '!' is present
      */
     private fun prefix(): Expr {
         if (matchAny(TokenType.Symbol.DASH, TokenType.Symbol.EXCLAMATION)) {
