@@ -1,1 +1,3 @@
-if (false) 42; else 69;
+while (true) {
+    break;
+}

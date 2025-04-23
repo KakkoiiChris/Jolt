@@ -143,6 +143,14 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         match(TokenType.Keyword.IF)                            -> ifElseStmt()
 
+        match(TokenType.Keyword.WHILE)                         -> whileStmt()
+
+        match(TokenType.Keyword.DO)                            -> doWhileStmt()
+
+        match(TokenType.Keyword.BREAK)                         -> breakStmt()
+
+        match(TokenType.Keyword.CONTINUE)                      -> continueStmt()
+
         else                                                   -> expressionStmt()
     }
 
@@ -221,6 +229,76 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         val context = start..here()
 
         return Stmt.IfElse(context, condition, branchTrue, branchFalse)
+    }
+
+    /**
+     * @return A single while statement
+     */
+    private fun whileStmt(): Stmt.While {
+        val start = here()
+
+        mustSkip(TokenType.Keyword.WHILE)
+        mustSkip(TokenType.Symbol.LEFT_PAREN, "Condition must start with parentheses")
+
+        val condition = expr()
+
+        mustSkip(TokenType.Symbol.RIGHT_PAREN, "Condition must end with parentheses")
+
+        val body = stmt()
+
+        val context = start..here()
+
+        return Stmt.While(context, condition, body)
+    }
+
+    /**
+     * @return A single so-while statement
+     */
+    private fun doWhileStmt(): Stmt.DoWhile {
+        val start = here()
+
+        mustSkip(TokenType.Keyword.DO)
+
+        val body = stmt()
+
+        mustSkip(TokenType.Symbol.LEFT_PAREN, "Condition must start with parentheses")
+
+        val condition = expr()
+
+        mustSkip(TokenType.Symbol.RIGHT_PAREN, "Condition must end with parentheses")
+        mustSkip(TokenType.Symbol.SEMICOLON, "Do-while loop must end with a semicolon")
+
+        val context = start..here()
+
+        return Stmt.DoWhile(context, condition, body)
+    }
+
+    /**
+     * @return A single break statement
+     */
+    private fun breakStmt(): Stmt.Break {
+        val start = here()
+
+        mustSkip(TokenType.Keyword.BREAK)
+        mustSkip(TokenType.Symbol.SEMICOLON)
+
+        val context = start..here()
+
+        return Stmt.Break(context)
+    }
+
+    /**
+     * @return A single continue statement
+     */
+    private fun continueStmt(): Stmt.Continue {
+        val start = here()
+
+        mustSkip(TokenType.Keyword.CONTINUE)
+        mustSkip(TokenType.Symbol.SEMICOLON)
+
+        val context = start..here()
+
+        return Stmt.Continue(context)
     }
 
     /**

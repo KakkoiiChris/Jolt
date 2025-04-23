@@ -83,13 +83,13 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
     }
 
     /**
-     *
+     * @param stmt The statement to visit
      */
     override fun visitIfElseStmt(stmt: Stmt.IfElse) {
         val condition = visit(stmt.condition)
 
         if (condition !is JoltBool) {
-            joltError("", source, stmt.condition.context)
+            joltError("If-else statement condition must be of type 'bool'", source, stmt.condition.context)
         }
 
         if (condition.value) {
@@ -98,6 +98,74 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         else {
             visit(stmt.branchFalse)
         }
+    }
+
+    /**
+     * @param stmt The statement to visit
+     */
+    override fun visitWhileStmt(stmt: Stmt.While) {
+        while (true) {
+            try {
+                val condition = visit(stmt.condition)
+
+                if (condition !is JoltBool) {
+                    joltError("If-else statement condition must be of type 'bool'", source, stmt.condition.context)
+                }
+
+                if (!condition.value) {
+                    break
+                }
+
+                visit(stmt.body)
+            }
+            catch (_: Break) {
+                break
+            }
+            catch (_: Continue) {
+                continue
+            }
+        }
+    }
+
+    /**
+     * @param stmt The statement to visit
+     */
+    override fun visitDoWhileStmt(stmt: Stmt.DoWhile) {
+        while (true) {
+            try {
+                visit(stmt.body)
+
+                val condition = visit(stmt.condition)
+
+                if (condition !is JoltBool) {
+                    joltError("If-else statement condition must be of type 'bool'", source, stmt.condition.context)
+                }
+
+                if (!condition.value) {
+                    break
+                }
+            }
+            catch (_: Break) {
+                break
+            }
+            catch (_: Continue) {
+                continue
+            }
+        }
+    }
+
+    /**
+     * @param stmt The statement to visit
+     */
+    override fun visitBreakStmt(stmt: Stmt.Break) {
+        throw Break(stmt.context)
+    }
+
+    /**
+     * @param stmt The statement to visit
+     */
+    override fun visitContinueStmt(stmt: Stmt.Continue) {
+        throw Continue(stmt.context)
     }
 
     /**

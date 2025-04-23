@@ -86,6 +86,26 @@ sealed interface TokenType {
          * Else Statements
          */
         ELSE,
+
+        /**
+         * While Statements
+         */
+        WHILE,
+
+        /**
+         * Do-While Statements
+         */
+        DO,
+
+        /**
+         * Break Statements
+         */
+        BREAK,
+
+        /**
+         * Continue Statements
+         */
+        CONTINUE,
     }
 
     /**

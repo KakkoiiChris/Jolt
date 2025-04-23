@@ -78,6 +78,44 @@ sealed interface Stmt {
     }
 
     /**
+     * Represents a while statement.
+     *
+     * @property condition The condition to check
+     * @property body The statement to visit at the start of the loop
+     */
+    data class While(override val context: Context, val condition: Expr, val body: Stmt) : Stmt {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitWhileStmt(this)
+    }
+
+    /**
+     * Represents a do-while statement.
+     *
+     * @property condition The condition to check
+     * @property body The statement to visit at the end of the loop
+     */
+    data class DoWhile(override val context: Context, val condition: Expr, val body: Stmt) : Stmt {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitDoWhileStmt(this)
+    }
+
+    /**
+     * Represents a break statement.
+     */
+    data class Break(override val context: Context) : Stmt {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitBreakStmt(this)
+    }
+
+    /**
+     * Represents a continue statement.
+     */
+    data class Continue(override val context: Context) : Stmt {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitContinueStmt(this)
+    }
+
+    /**
      * Represents a single expression statement.
      *
      * @property expr The expression contained by this statement
@@ -128,6 +166,34 @@ sealed interface Stmt {
          * @param stmt The statement to visit
          */
         fun visitIfElseStmt(stmt: IfElse): X
+
+        /**
+         * Visits a while statement.
+         *
+         * @param stmt The statement to visit
+         */
+        fun visitWhileStmt(stmt: While): X
+
+        /**
+         * Visits a do-while statement.
+         *
+         * @param stmt The statement to visit
+         */
+        fun visitDoWhileStmt(stmt: DoWhile): X
+
+        /**
+         * Visits a break statement.
+         *
+         * @param stmt The statement to visit
+         */
+        fun visitBreakStmt(stmt: Break): X
+
+        /**
+         * Visits a continue statement.
+         *
+         * @param stmt The statement to visit
+         */
+        fun visitContinueStmt(stmt: Continue): X
 
         /**
          * Visits an expression statement.
