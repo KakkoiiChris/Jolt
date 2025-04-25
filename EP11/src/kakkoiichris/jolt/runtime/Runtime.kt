@@ -33,8 +33,13 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
      * @return The value of the last expression
      */
     fun run(program: Program): JoltValue<*> {
-        for (stmt in program) {
-            visit(stmt)
+        try {
+            for (stmt in program) {
+                visit(stmt)
+            }
+        }
+        catch (r: Redirect) {
+            joltError("Unhandled ${r::class.simpleName!!.lowercase()}", source, r.origin)
         }
 
         return last
@@ -118,11 +123,21 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
 
                 visit(stmt.body)
             }
-            catch (_: Break) {
-                break
+            catch (r: Redirect.Break) {
+                if (r.label.isEmpty() || r.label == stmt.label) {
+                    break
+                }
+                else {
+                    throw r
+                }
             }
-            catch (_: Continue) {
-                continue
+            catch (r: Redirect.Continue) {
+                if (r.label.isEmpty() || r.label == stmt.label) {
+                    continue
+                }
+                else {
+                    throw r
+                }
             }
         }
     }
@@ -145,11 +160,21 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
                     break
                 }
             }
-            catch (_: Break) {
-                break
+            catch (r: Redirect.Break) {
+                if (r.label.isEmpty() || r.label == stmt.label) {
+                    break
+                }
+                else {
+                    throw r
+                }
             }
-            catch (_: Continue) {
-                continue
+            catch (r: Redirect.Continue) {
+                if (r.label.isEmpty() || r.label == stmt.label) {
+                    continue
+                }
+                else {
+                    throw r
+                }
             }
         }
     }
@@ -158,14 +183,14 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
      * @param stmt The statement to visit
      */
     override fun visitBreakStmt(stmt: Stmt.Break) {
-        throw Break(stmt.context)
+        throw Redirect.Break(stmt.context, stmt.label)
     }
 
     /**
      * @param stmt The statement to visit
      */
     override fun visitContinueStmt(stmt: Stmt.Continue) {
-        throw Continue(stmt.context)
+        throw Redirect.Continue(stmt.context, stmt.label)
     }
 
     /**

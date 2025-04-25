@@ -215,6 +215,11 @@ sealed interface TokenType {
         RIGHT_BRACE("}"),
 
         /**
+         * An at sign « `@` » used for loop labels.
+         */
+        AT("@"),
+
+        /**
          * A semicolon « `;` » used for the ends of statements.
          */
         SEMICOLON(";");

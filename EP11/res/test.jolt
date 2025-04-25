@@ -1,3 +1,13 @@
-while (true) {
-    break;
+while @ x (true) {
+    while (true) {
+        while (true) {
+            while (true) {
+                while (true) {
+                    while (true) {
+                        break main;
+                    }
+                }
+            }
+        }
+    }
 }
