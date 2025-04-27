@@ -11,8 +11,8 @@ package kakkoiichris.jolt.runtime
 
 import kakkoiichris.jolt.lexer.Context
 
-sealed class Redirect(val origin: Context) : Throwable()
+sealed class Redirect(val origin: Context, val label: String) : Throwable() {
+    class Break(origin: Context, label: String) : Redirect(origin, label)
 
-class Break(origin: Context) : Redirect(origin)
-
-class Continue(origin: Context) : Redirect(origin)
+    class Continue(origin: Context, label: String) : Redirect(origin, label)
+}

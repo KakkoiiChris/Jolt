@@ -238,6 +238,9 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         val start = here()
 
         mustSkip(TokenType.Keyword.WHILE)
+
+        val label = if (skip(TokenType.Symbol.AT)) name().value else ""
+
         mustSkip(TokenType.Symbol.LEFT_PAREN, "Condition must start with parentheses")
 
         val condition = expr()
@@ -248,7 +251,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         val context = start..here()
 
-        return Stmt.While(context, condition, body)
+        return Stmt.While(context, label, condition, body)
     }
 
     /**
@@ -258,6 +261,8 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         val start = here()
 
         mustSkip(TokenType.Keyword.DO)
+
+        val label = if (skip(TokenType.Symbol.AT)) name().value else ""
 
         val body = stmt()
 
@@ -270,7 +275,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         val context = start..here()
 
-        return Stmt.DoWhile(context, condition, body)
+        return Stmt.DoWhile(context, label, condition, body)
     }
 
     /**
@@ -280,11 +285,14 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         val start = here()
 
         mustSkip(TokenType.Keyword.BREAK)
+
+        val label = if (!match(TokenType.Symbol.SEMICOLON)) name().value else ""
+
         mustSkip(TokenType.Symbol.SEMICOLON)
 
         val context = start..here()
 
-        return Stmt.Break(context)
+        return Stmt.Break(context, label)
     }
 
     /**
@@ -294,11 +302,14 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         val start = here()
 
         mustSkip(TokenType.Keyword.CONTINUE)
+
+        val label = if (!match(TokenType.Symbol.SEMICOLON)) name().value else ""
+
         mustSkip(TokenType.Symbol.SEMICOLON)
 
         val context = start..here()
 
-        return Stmt.Continue(context)
+        return Stmt.Continue(context, label)
     }
 
     /**

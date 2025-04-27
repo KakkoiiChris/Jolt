@@ -230,6 +230,16 @@ sealed interface TokenType {
         RIGHT_SQUARE("]"),
 
         /**
+         * An at sign « `@` » used for loop labels.
+         */
+        AT("@"),
+
+        /**
+         * A comma « `,` » used for separating list elements.
+         */
+        COMMA(","),
+
+        /**
          * A semicolon « `;` » used for the ends of statements.
          */
         SEMICOLON(";");

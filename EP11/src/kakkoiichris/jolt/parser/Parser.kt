@@ -306,7 +306,6 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         val label = if (!match(TokenType.Symbol.SEMICOLON)) name().value else ""
 
-
         mustSkip(TokenType.Symbol.SEMICOLON)
 
         val context = start..here()

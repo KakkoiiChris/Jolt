@@ -83,7 +83,7 @@ sealed interface Stmt {
      * @property condition The condition to check
      * @property body The statement to visit at the start of the loop
      */
-    data class While(override val context: Context, val condition: Expr, val body: Stmt) : Stmt {
+    data class While(override val context: Context, val label: String, val condition: Expr, val body: Stmt) : Stmt {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitWhileStmt(this)
     }
@@ -94,7 +94,7 @@ sealed interface Stmt {
      * @property condition The condition to check
      * @property body The statement to visit at the end of the loop
      */
-    data class DoWhile(override val context: Context, val condition: Expr, val body: Stmt) : Stmt {
+    data class DoWhile(override val context: Context, val label: String, val condition: Expr, val body: Stmt) : Stmt {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitDoWhileStmt(this)
     }
@@ -102,7 +102,7 @@ sealed interface Stmt {
     /**
      * Represents a break statement.
      */
-    data class Break(override val context: Context) : Stmt {
+    data class Break(override val context: Context, val label: String) : Stmt {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitBreakStmt(this)
     }
@@ -110,7 +110,7 @@ sealed interface Stmt {
     /**
      * Represents a continue statement.
      */
-    data class Continue(override val context: Context) : Stmt {
+    data class Continue(override val context: Context, val label: String) : Stmt {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitContinueStmt(this)
     }

@@ -71,6 +71,16 @@ sealed interface Expr {
     }
 
     /**
+     * Represents a single nested value expression.
+     *
+     * @property expr The value of this expression
+     */
+    data class ListLiteral(override val context: Context, val elements: List<Expr>) : Expr {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitListLiteralExpr(this)
+    }
+
+    /**
      * Represents a single unary operator expression.
      *
      * @property operator The operator for this expression
@@ -230,7 +240,7 @@ sealed interface Expr {
      * @property target The value to index
      * @property index The index to look up
      */
-    data class GetIndex(override val context: Context, val target:Expr, val index:Expr):Expr{
+    data class GetIndex(override val context: Context, val target: Expr, val index: Expr) : Expr {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitGetIndexExpr(this)
     }
@@ -276,6 +286,13 @@ sealed interface Expr {
          * @param expr The expression to visit
          */
         fun visitNestedExpr(expr: Nested): X
+
+        /**
+         * Visits a list expression.
+         *
+         * @param expr The expression to visit
+         */
+        fun visitListLiteralExpr(expr: ListLiteral): X
 
         /**
          * Visits a unary operator expression.

@@ -42,5 +42,14 @@ data class JoltNum(override val value: Double) : JoltValue<Double> {
 data class JoltString(override val value: String) : JoltValue<String> {
     override val type = "string"
 
-    override fun toString() = value
+    override fun toString() = "\"$value\""
+}
+
+data class JoltList(override val value: MutableList<JoltValue<*>>) : JoltValue<MutableList<JoltValue<*>>> {
+    override val type get() = "list"
+
+    override fun toString() = if (value.isEmpty())
+        value.joinToString(prefix = "[ ", postfix = " ]", separator = ", ") { it.toString() }
+    else
+        "[]"
 }
