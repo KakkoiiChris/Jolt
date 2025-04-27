@@ -278,27 +278,6 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         return JoltList(elements)
     }
 
-    override fun visitListGeneratorExpr(expr: Expr.ListGenerator): JoltValue<*> {
-        val elements = mutableListOf<JoltValue<*>>()
-
-        val iterable = visit(expr.iterable).iterable
-
-        for (element in iterable) {
-            try {
-                memory.push()
-
-                memory.declare(true, expr.pointer, element)
-
-                elements += visit(expr.element)
-            }
-            finally {
-                memory.pop()
-            }
-        }
-
-        return JoltList(elements)
-    }
-
     /**
      * @param expr The expression to visit
      *

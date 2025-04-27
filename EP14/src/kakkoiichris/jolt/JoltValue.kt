@@ -7,7 +7,7 @@ interface JoltValue<X> {
 
     val type: String
 
-    val iterable: List<JoltValue<*>> get() = listOf(this)
+    val iterable:List<JoltValue<*>> get() = listOf(this)
 
     companion object {
         fun of(x: Any) = when (x) {
@@ -30,8 +30,6 @@ data class JoltBool(override val value: Boolean) : JoltValue<Boolean> {
 
 data class JoltNum(override val value: Double) : JoltValue<Double> {
     override val type = "num"
-
-    override val iterable get() = (0..<value.toInt()).map { JoltNum(it.toDouble()) }.toList()
 
     private fun truncate() = (
         if (value == floor(value))

@@ -632,33 +632,18 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         return Expr.Nested(context, expr)
     }
 
-    private fun list(): Expr {
+    private fun list(): Expr.ListLiteral {
         val start = here()
 
         mustSkip(TokenType.Symbol.LEFT_SQUARE)
 
-        val expr = expr()
-
-        if (skip(TokenType.Keyword.FOR)) {
-            val pointer = name()
-
-            mustSkip(TokenType.Symbol.COLON)
-
-            val iterable = expr()
-
-            mustSkip(TokenType.Symbol.RIGHT_SQUARE)
-
-            val context = start..here()
-
-            return Expr.ListGenerator(context, expr, pointer, iterable)
-        }
-
-        val elements = mutableListOf(expr)
+        val elements = mutableListOf<Expr>()
 
         if (!skip(TokenType.Symbol.RIGHT_SQUARE)) {
-            while (skip(TokenType.Symbol.COMMA)) {
+            do {
                 elements += expr()
             }
+            while (skip(TokenType.Symbol.COMMA))
 
             mustSkip(TokenType.Symbol.RIGHT_SQUARE)
         }

@@ -83,17 +83,6 @@ sealed interface Expr {
     }
 
     /**
-     * Represents a single list literal expression.
-     *
-     * @property elements The elements in this list
-     */
-    data class ListGenerator(override val context: Context, val element: Expr, val pointer: Name, val iterable: Expr) :
-        Expr {
-        override fun <X> accept(visitor: Visitor<X>): X =
-            visitor.visitListGeneratorExpr(this)
-    }
-
-    /**
      * Represents a single unary operator expression.
      *
      * @property operator The operator for this expression
@@ -306,13 +295,6 @@ sealed interface Expr {
          * @param expr The expression to visit
          */
         fun visitListLiteralExpr(expr: ListLiteral): X
-
-        /**
-         * Visits a list expression.
-         *
-         * @param expr The expression to visit
-         */
-        fun visitListGeneratorExpr(expr: ListGenerator): X
 
         /**
          * Visits a unary operator expression.
