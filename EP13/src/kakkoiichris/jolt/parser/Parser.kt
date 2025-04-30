@@ -367,6 +367,18 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         val expr = or()
 
         if (match(TokenType.Symbol.EQUAL)) {
+            if (expr is Expr.GetIndex) {
+                val start = expr.context
+
+                mustSkip(TokenType.Symbol.EQUAL)
+
+                val value = or()
+
+                val context = start..here()
+
+                return Expr.SetIndex(context, expr.target, expr.index, value)
+            }
+
             if (expr !is Expr.Name) {
                 joltError("Cannot assign to '${expr.javaClass.simpleName}'!", source, expr.context)
             }

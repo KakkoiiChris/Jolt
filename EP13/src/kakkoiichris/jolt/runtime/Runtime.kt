@@ -581,9 +581,48 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
                 JoltString("")
             }
 
-            else       -> TODO()
+            else       -> invalidIndex(index, target, expr.index)
         }
 
-        else          -> TODO()
+        is JoltList   -> when (val index = visit(expr.index)) {
+            is JoltNum -> if (index.value.toInt() !in target.value.indices) {
+                target.value[index.value.toInt()]
+            }
+            else {
+                JoltBool(false)
+            }
+
+            else       -> invalidIndex(index, target, expr.index)
+        }
+
+        else          -> nonIndexableValue(target, expr.target)
     }
+
+    override fun visitSetIndexExpr(expr: Expr.SetIndex): JoltValue<*> {
+        val value = visit(expr.value)
+
+        when (val target = visit(expr.target)) {
+            is JoltList -> when (val index = visit(expr.index)) {
+                is JoltNum -> if (index.value.toInt() !in target.value.indices) {
+                    target.value[index.value.toInt()] = value
+                }
+
+                else       -> invalidIndex(index, target, expr.index)
+            }
+
+            else        -> nonIndexableValue(target, expr.target)
+        }
+
+        return value
+    }
+
+    private fun invalidIndex(index: JoltValue<*>, target: JoltValue<*>, indexExpr: Expr): Nothing =
+        joltError(
+            "Index of type '${index.type}' cannot index a value of type '${target.type}'",
+            source,
+            indexExpr.context
+        )
+
+    private fun nonIndexableValue(target: JoltValue<*>, targetExpr: Expr): Nothing =
+        joltError("Value of type '${target.type}' cannot be indexed", source, targetExpr.context)
 }

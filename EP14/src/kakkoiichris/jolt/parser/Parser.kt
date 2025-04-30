@@ -153,6 +153,10 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         match(TokenType.Keyword.CONTINUE)                      -> continueStmt()
 
+        match(TokenType.Keyword.FUN)                           -> funStmt()
+
+        match(TokenType.Keyword.RETURN)                        -> returnStmt()
+
         else                                                   -> expressionStmt()
     }
 
@@ -342,6 +346,71 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     /**
+     * @return A single fun statement
+     */
+    private fun funStmt(): Stmt.Fun {
+        val start = here()
+
+        mustSkip(TokenType.Keyword.FUN)
+
+        val name = name()
+
+        val params = mutableListOf<Expr.Name>()
+
+        if (skip(TokenType.Symbol.LEFT_PAREN)) {
+            do {
+                params += name()
+            }
+            while (skip(TokenType.Symbol.COMMA))
+        }
+
+        val body = when {
+            match(TokenType.Symbol.EQUAL)      -> {
+                val bodyStart = here()
+
+                mustSkip(TokenType.Symbol.EQUAL)
+
+                val value = expr()
+
+                mustSkip(TokenType.Symbol.SEMICOLON)
+
+                val bodyContext = bodyStart..here()
+
+                Stmt.Return(bodyContext, value)
+            }
+
+            match(TokenType.Symbol.LEFT_BRACE) -> blockStmt()
+
+            else                               -> joltError(
+                "Invalid function body starting with '${token.type}'",
+                source,
+                here()
+            )
+        }
+
+        val context = start..here()
+
+        return Stmt.Fun(context, name, params, body)
+    }
+
+    /**
+     * @return A single return statement
+     */
+    private fun returnStmt(): Stmt.Return {
+        val start = here()
+
+        mustSkip(TokenType.Keyword.RETURN)
+
+        val value = if (!match(TokenType.Symbol.SEMICOLON)) expr() else Expr.Empty
+
+        mustSkip(TokenType.Symbol.SEMICOLON)
+
+        val context = start..here()
+
+        return Stmt.Return(context, value)
+    }
+
+    /**
      * @return A single expression statement
      */
     private fun expressionStmt(): Stmt.Expression {
@@ -367,6 +436,18 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         val expr = or()
 
         if (match(TokenType.Symbol.EQUAL)) {
+            if (expr is Expr.GetIndex) {
+                val start = expr.context
+
+                mustSkip(TokenType.Symbol.EQUAL)
+
+                val value = or()
+
+                val context = start..here()
+
+                return Expr.SetIndex(context, expr.target, expr.index, value)
+            }
+
             if (expr !is Expr.Name) {
                 joltError("Cannot assign to '${expr.javaClass.simpleName}'!", source, expr.context)
             }
@@ -563,19 +644,46 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun postfix(): Expr {
         var expr = terminal()
 
-        while (match(TokenType.Symbol.LEFT_SQUARE)) {
-            val (_, type) = get<TokenType.Symbol>()
+        while (matchAny(TokenType.Symbol.LEFT_SQUARE, TokenType.Symbol.LEFT_PAREN)) {
+            val (context, type) = get<TokenType.Symbol>()
 
-            val index = expr()
+            expr = when (type) {
+                TokenType.Symbol.LEFT_SQUARE -> index(expr)
 
-            mustSkip(TokenType.Symbol.RIGHT_SQUARE)
+                TokenType.Symbol.LEFT_PAREN  -> invoke(expr)
 
-            val context = expr.context..here()
-
-            expr = Expr.GetIndex(context, expr, index)
+                else                         -> TODO()
+            }
         }
 
         return expr
+    }
+
+    private fun index(target: Expr): Expr.GetIndex {
+        val index = expr()
+
+        mustSkip(TokenType.Symbol.RIGHT_SQUARE)
+
+        val context = target.context..here()
+
+        return Expr.GetIndex(context, target, index)
+    }
+
+    private fun invoke(target: Expr): Expr.Invoke {
+        val args = mutableListOf<Expr>()
+
+        if (!skip(TokenType.Symbol.RIGHT_PAREN)) {
+            do {
+                args += expr()
+            }
+            while (skip(TokenType.Symbol.COMMA))
+
+            mustSkip(TokenType.Symbol.RIGHT_PAREN)
+        }
+
+        val context = target.context..here()
+
+        return Expr.Invoke(context, target, args)
     }
 
     /**
@@ -632,18 +740,33 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         return Expr.Nested(context, expr)
     }
 
-    private fun list(): Expr.ListLiteral {
+    private fun list(): Expr {
         val start = here()
 
         mustSkip(TokenType.Symbol.LEFT_SQUARE)
 
-        val elements = mutableListOf<Expr>()
+        val expr = expr()
+
+        if (skip(TokenType.Keyword.FOR)) {
+            val pointer = name()
+
+            mustSkip(TokenType.Symbol.COLON)
+
+            val iterable = expr()
+
+            mustSkip(TokenType.Symbol.RIGHT_SQUARE)
+
+            val context = start..here()
+
+            return Expr.ListGenerator(context, expr, pointer, iterable)
+        }
+
+        val elements = mutableListOf(expr)
 
         if (!skip(TokenType.Symbol.RIGHT_SQUARE)) {
-            do {
+            while (skip(TokenType.Symbol.COMMA)) {
                 elements += expr()
             }
-            while (skip(TokenType.Symbol.COMMA))
 
             mustSkip(TokenType.Symbol.RIGHT_SQUARE)
         }

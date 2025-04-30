@@ -83,6 +83,17 @@ sealed interface Expr {
     }
 
     /**
+     * Represents a single list literal expression.
+     *
+     * @property elements The elements in this list
+     */
+    data class ListGenerator(override val context: Context, val element: Expr, val pointer: Name, val iterable: Expr) :
+        Expr {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitListGeneratorExpr(this)
+    }
+
+    /**
      * Represents a single unary operator expression.
      *
      * @property operator The operator for this expression
@@ -248,6 +259,29 @@ sealed interface Expr {
     }
 
     /**
+     * Represents a single set index operator expression.
+     *
+     * @property target The value to index
+     * @property index The index to look up
+     * @property value The value to set
+     */
+    data class SetIndex(override val context: Context, val target: Expr, val index: Expr, val value: Expr) : Expr {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitSetIndexExpr(this)
+    }
+
+    /**
+     * Represents a single set index operator expression.
+     *
+     * @property target The value to index
+     * @property value The value to set
+     */
+    data class Invoke(override val context: Context, val target: Expr, val args: Exprs) : Expr {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitInvokeExpr(this)
+    }
+
+    /**
      * An interface that facilitates walking the expression tree.
      *
      * @param X The type of values to be produced by this visitor
@@ -297,6 +331,13 @@ sealed interface Expr {
         fun visitListLiteralExpr(expr: ListLiteral): X
 
         /**
+         * Visits a list expression.
+         *
+         * @param expr The expression to visit
+         */
+        fun visitListGeneratorExpr(expr: ListGenerator): X
+
+        /**
          * Visits a unary operator expression.
          *
          * @param expr The expression to visit
@@ -324,5 +365,19 @@ sealed interface Expr {
          * @param expr The expression to visit
          */
         fun visitGetIndexExpr(expr: GetIndex): X
+
+        /**
+         * Visits a set index expression.
+         *
+         * @param expr The expression to visit
+         */
+        fun visitSetIndexExpr(expr: SetIndex): X
+
+        /**
+         * Visits an invoke expression.
+         *
+         * @param expr The expression to visit
+         */
+        fun visitInvokeExpr(expr: Invoke): X
     }
 }

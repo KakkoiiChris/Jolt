@@ -259,6 +259,18 @@ sealed interface Expr {
     }
 
     /**
+     * Represents a single set index operator expression.
+     *
+     * @property target The value to index
+     * @property index The index to look up
+     * @property value The value to set
+     */
+    data class SetIndex(override val context: Context, val target: Expr, val index: Expr, val value: Expr) : Expr {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitSetIndexExpr(this)
+    }
+
+    /**
      * An interface that facilitates walking the expression tree.
      *
      * @param X The type of values to be produced by this visitor
@@ -337,10 +349,17 @@ sealed interface Expr {
         fun visitAssignExpr(expr: Assign): X
 
         /**
-         * Visits an get index expression.
+         * Visits a get index expression.
          *
          * @param expr The expression to visit
          */
         fun visitGetIndexExpr(expr: GetIndex): X
+
+        /**
+         * Visits a set index expression.
+         *
+         * @param expr The expression to visit
+         */
+        fun visitSetIndexExpr(expr: SetIndex): X
     }
 }

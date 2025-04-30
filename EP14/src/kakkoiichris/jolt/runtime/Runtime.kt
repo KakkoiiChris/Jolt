@@ -230,6 +230,20 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
     }
 
     /**
+     * @param stmt The statement to visit
+     */
+    override fun visitFunStmt(stmt: Stmt.Fun) {
+        TODO("Not yet implemented")
+    }
+
+    /**
+     * @param stmt The statement to visit
+     */
+    override fun visitReturnStmt(stmt: Stmt.Return) {
+        TODO("Not yet implemented")
+    }
+
+    /**
      * Stores the value of the contained expression, and prints it to the screen.
      *
      * @param stmt The statement to visit
@@ -274,6 +288,27 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
 
     override fun visitListLiteralExpr(expr: Expr.ListLiteral): JoltValue<*> {
         val elements = expr.elements.map { visit(it) }.toMutableList()
+
+        return JoltList(elements)
+    }
+
+    override fun visitListGeneratorExpr(expr: Expr.ListGenerator): JoltValue<*> {
+        val elements = mutableListOf<JoltValue<*>>()
+
+        val iterable = visit(expr.iterable).iterable
+
+        for (element in iterable) {
+            try {
+                memory.push()
+
+                memory.declare(true, expr.pointer, element)
+
+                elements += visit(expr.element)
+            }
+            finally {
+                memory.pop()
+            }
+        }
 
         return JoltList(elements)
     }
@@ -560,9 +595,52 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
                 JoltString("")
             }
 
-            else       -> TODO()
+            else       -> invalidIndex(index, target, expr.index)
         }
 
-        else          -> TODO()
+        is JoltList   -> when (val index = visit(expr.index)) {
+            is JoltNum -> if (index.value.toInt() !in target.value.indices) {
+                target.value[index.value.toInt()]
+            }
+            else {
+                JoltBool(false)
+            }
+
+            else       -> invalidIndex(index, target, expr.index)
+        }
+
+        else          -> nonIndexableValue(target, expr.target)
+    }
+
+    override fun visitSetIndexExpr(expr: Expr.SetIndex): JoltValue<*> {
+        val value = visit(expr.value)
+
+        when (val target = visit(expr.target)) {
+            is JoltList -> when (val index = visit(expr.index)) {
+                is JoltNum -> if (index.value.toInt() !in target.value.indices) {
+                    target.value[index.value.toInt()] = value
+                }
+
+                else       -> invalidIndex(index, target, expr.index)
+            }
+
+            else        -> nonIndexableValue(target, expr.target)
+        }
+
+        return value
+    }
+
+    private fun invalidIndex(index: JoltValue<*>, target: JoltValue<*>, indexExpr: Expr): Nothing =
+        joltError(
+            "Index of type '${index.type}' cannot index a value of type '${target.type}'",
+            source,
+            indexExpr.context
+        )
+
+    private fun nonIndexableValue(target: JoltValue<*>, targetExpr: Expr): Nothing =
+        joltError("Value of type '${target.type}' cannot be indexed", source, targetExpr.context)
+
+    override fun visitInvokeExpr(expr: Expr.Invoke): JoltValue<*> {
+        TODO("Not yet implemented")
     }
 }

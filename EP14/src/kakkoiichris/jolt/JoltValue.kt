@@ -1,5 +1,7 @@
 package kakkoiichris.jolt
 
+import kakkoiichris.jolt.parser.Stmt
+import kakkoiichris.jolt.runtime.Memory
 import kotlin.math.floor
 
 interface JoltValue<X> {
@@ -7,17 +9,17 @@ interface JoltValue<X> {
 
     val type: String
 
-    val iterable:List<JoltValue<*>> get() = listOf(this)
+    val iterable: List<JoltValue<*>> get() = listOf(this)
 
     companion object {
         fun of(x: Any) = when (x) {
-            is Boolean -> JoltBool(x)
+            is Boolean                   -> JoltBool(x)
 
-            is Double  -> JoltNum(x)
+            is Double                    -> JoltNum(x)
 
-            is String  -> JoltString(x)
+            is String                    -> JoltString(x)
 
-            else       -> TODO("NOT A VALUE")
+            else                         -> TODO("NOT A VALUE")
         }
     }
 }
@@ -30,6 +32,8 @@ data class JoltBool(override val value: Boolean) : JoltValue<Boolean> {
 
 data class JoltNum(override val value: Double) : JoltValue<Double> {
     override val type = "num"
+
+    override val iterable get() = (0..<value.toInt()).map { JoltNum(it.toDouble()) }.toList()
 
     private fun truncate() = (
         if (value == floor(value))
@@ -58,4 +62,11 @@ data class JoltList(override val value: MutableList<JoltValue<*>>) : JoltValue<M
         value.joinToString(prefix = "[", postfix = "]", separator = ", ") { it.toString() }
     else
         "[]"
+}
+
+data class JoltFun(override val value: Stmt.Fun, val scope: Memory.Scope) : JoltValue<Stmt.Fun> {
+    override val type get() = "fun"
+
+    override fun toString() =
+        "fun ${value.name}${value.params.joinToString(prefix = "(", postfix = ")", separator = ", ") { it.value }}"
 }
