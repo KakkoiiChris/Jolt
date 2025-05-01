@@ -38,6 +38,9 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
                 visit(stmt)
             }
         }
+        catch(r: Redirect.Return) {
+            return r.value
+        }
         catch (r: Redirect) {
             joltError("Unhandled ${r::class.simpleName!!.lowercase()}", source, r.origin)
         }
@@ -233,14 +236,14 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
      * @param stmt The statement to visit
      */
     override fun visitFunStmt(stmt: Stmt.Fun) {
-        TODO("Not yet implemented")
+        memory.declare(true, stmt.name, JoltFun(stmt, memory.peek()))
     }
 
     /**
      * @param stmt The statement to visit
      */
     override fun visitReturnStmt(stmt: Stmt.Return) {
-        TODO("Not yet implemented")
+        throw Redirect.Return(stmt.context, visit(stmt.value))
     }
 
     /**
@@ -641,6 +644,25 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         joltError("Value of type '${target.type}' cannot be indexed", source, targetExpr.context)
 
     override fun visitInvokeExpr(expr: Expr.Invoke): JoltValue<*> {
-        TODO("Not yet implemented")
+        val args = expr.args.map(::visit)
+
+        val (fn, scope) = visit(expr.target) as? JoltFun ?: TODO()
+
+        try {
+            memory.push(Memory.Scope(scope))
+
+            for ((i, param) in fn.params.withIndex()) {
+                val value = if (i in args.indices) args[i] else JoltBool(false)
+
+                memory.declare(true, param, value)
+            }
+
+            visit(fn.body)
+        }
+        finally {
+            memory.pop()
+        }
+
+        return JoltBool(false)
     }
 }

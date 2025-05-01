@@ -25,8 +25,8 @@ class Memory {
     /**
      * Puts an empty scope onto the stack.
      */
-    fun push() {
-        stack = Scope(stack)
+    fun push(scope: Scope = Scope(stack)) {
+        stack = scope
     }
 
     /**
@@ -35,6 +35,8 @@ class Memory {
     fun pop() {
         stack = stack.parent ?: error("JOLT ERROR $JOLT MEMORY STACK UNDERFLOW")
     }
+
+    fun peek() = stack
 
     /**
      * @param name The name to look up
