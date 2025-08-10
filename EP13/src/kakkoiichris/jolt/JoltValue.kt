@@ -1,5 +1,7 @@
 package kakkoiichris.jolt
 
+import kakkoiichris.jolt.parser.Stmt
+import kakkoiichris.jolt.runtime.Memory
 import kotlin.math.floor
 
 interface JoltValue<X> {
@@ -11,13 +13,13 @@ interface JoltValue<X> {
 
     companion object {
         fun of(x: Any) = when (x) {
-            is Boolean -> JoltBool(x)
+            is Boolean                   -> JoltBool(x)
 
-            is Double  -> JoltNum(x)
+            is Double                    -> JoltNum(x)
 
-            is String  -> JoltString(x)
+            is String                    -> JoltString(x)
 
-            else       -> TODO("NOT A VALUE")
+            else                         -> TODO("NOT A VALUE")
         }
     }
 }
@@ -60,4 +62,11 @@ data class JoltList(override val value: MutableList<JoltValue<*>>) : JoltValue<M
         value.joinToString(prefix = "[", postfix = "]", separator = ", ") { it.toString() }
     else
         "[]"
+}
+
+data class JoltFun(override val value: Stmt.Fun, val scope: Memory.Scope) : JoltValue<Stmt.Fun> {
+    override val type get() = "fun"
+
+    override fun toString() =
+        "fun ${value.name}${value.params.joinToString(prefix = "(", postfix = ")", separator = ", ") { it.value }}"
 }

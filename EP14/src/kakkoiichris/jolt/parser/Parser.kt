@@ -355,13 +355,30 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         val name = name()
 
-        val params = mutableListOf<Expr.Name>()
+        val params = mutableListOf<Stmt.Param>()
+
+        var varArgs: Stmt.Param? = null
 
         if (skip(TokenType.Symbol.LEFT_PAREN)) {
             do {
-                params += name()
+                val paramName = name()
+                val isVarArgs = skip(TokenType.Symbol.STAR)
+                val default = if (skip(TokenType.Symbol.EQUAL)) expr() else Expr.Empty
+
+                val context = paramName.context..here()
+
+                val param = Stmt.Param(context, paramName, default)
+
+                if (isVarArgs) {
+                    varArgs = param
+                    break
+                }
+
+                params += param
             }
             while (skip(TokenType.Symbol.COMMA))
+
+            mustSkip(TokenType.Symbol.RIGHT_PAREN)
         }
 
         val body = when {
@@ -390,7 +407,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         val context = start..here()
 
-        return Stmt.Fun(context, name, params, body)
+        return Stmt.Fun(context, name, params, varArgs, body)
     }
 
     /**
@@ -465,6 +482,9 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         return expr
     }
+
+    private fun argExpr() =
+        or()
 
     /**
      * @return A single equality binary expression if a `==` or `!=` is present
@@ -670,11 +690,21 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     }
 
     private fun invoke(target: Expr): Expr.Invoke {
-        val args = mutableListOf<Expr>()
+        val args = mutableListOf<Expr.Arg>()
 
         if (!skip(TokenType.Symbol.RIGHT_PAREN)) {
             do {
-                args += expr()
+                val named = skip(TokenType.Symbol.AT)
+
+                val name = if (named) name() else Expr.Name.none
+
+                if (named) mustSkip(TokenType.Symbol.EQUAL)
+
+                val value = argExpr()
+
+                val argContext = value.context
+
+                args += Expr.Arg(argContext, name, value)
             }
             while (skip(TokenType.Symbol.COMMA))
 

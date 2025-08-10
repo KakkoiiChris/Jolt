@@ -68,5 +68,5 @@ data class JoltFun(override val value: Stmt.Fun, val scope: Memory.Scope) : Jolt
     override val type get() = "fun"
 
     override fun toString() =
-        "fun ${value.name}${value.params.joinToString(prefix = "(", postfix = ")", separator = ", ") { it.value }}"
+        "fun ${value.name}${value.params.joinToString(prefix = "(", postfix = ")", separator = ", ") { it.name.value }}"
 }

@@ -135,11 +135,20 @@ sealed interface Stmt {
     /**
      * Represents a continue statement.
      */
-    data class Fun(override val context: Context, val name: Expr.Name, val params: List<Expr.Name>, val body: Stmt) :
-        Stmt {
+    data class Fun(
+        override val context: Context,
+        val name: Expr.Name,
+        val params: List<Param>,
+        val varArgs: Param?,
+        val body: Stmt
+    ) : Stmt {
+        val isVarArgs = varArgs != null
+
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitFunStmt(this)
     }
+
+    data class Param(val context: Context, val name: Expr.Name, val default: Expr)
 
     /**
      * Represents a continue statement.

@@ -16,7 +16,7 @@ import kakkoiichris.jolt.parser.Program
 import kakkoiichris.jolt.parser.Stmt
 
 /**
- * A class that executes programs via implementations of the visitors of both the Expr and Stmt class.
+ * A class that executes programs via implementations of the visitors for both the Expr and Stmt class.
  *
  * @param source The program source used for retrieving error contexts
  */
@@ -38,7 +38,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
                 visit(stmt)
             }
         }
-        catch(r: Redirect.Return) {
+        catch (r: Redirect.Return) {
             return r.value
         }
         catch (r: Redirect) {
@@ -644,17 +644,58 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         joltError("Value of type '${target.type}' cannot be indexed", source, targetExpr.context)
 
     override fun visitInvokeExpr(expr: Expr.Invoke): JoltValue<*> {
-        val args = expr.args.map(::visit)
-
         val (fn, scope) = visit(expr.target) as? JoltFun ?: TODO()
+
+        val finalArgs = mutableMapOf<Stmt.Param, Expr>()
+
+        val groups = expr.args.groupBy { it.isNamed }
+        val named = groups[true] ?: emptyList()
+        val positional = groups[false] ?: emptyList()
+
+        for (arg in named) {
+            val param = fn.params.first { it.name.value == arg.name.value }
+
+            finalArgs[param] = arg.value
+        }
+
+        var a = 0
+        var p = 0
+
+        while (a < positional.size) {
+            if (p >= fn.params.size) break
+
+            val param = fn.params[p++]
+
+            if (finalArgs.containsKey(param)) continue
+
+            finalArgs[param] = positional[a++].value
+        }
+
+        for ((param, arg) in finalArgs) {
+            if (arg is Expr.Empty) {
+                finalArgs[param] = param.default
+            }
+        }
+
+        if (fn.isVarArgs) {
+            val list = mutableListOf<Expr>()
+
+            while (a < positional.size) {
+                list += positional[a++].value
+            }
+
+            finalArgs[fn.varArgs!!] = Expr.ListLiteral(list.first().context, list.toList())
+        }
 
         try {
             memory.push(Memory.Scope(scope))
 
-            for ((i, param) in fn.params.withIndex()) {
-                val value = if (i in args.indices) args[i] else JoltBool(false)
+            for ((param, arg) in finalArgs) {
+                val (_, name, _) = param
 
-                memory.declare(true, param, value)
+                val value = visit(arg)
+
+                memory.declare(true, name, value)
             }
 
             visit(fn.body)

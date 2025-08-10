@@ -111,6 +111,16 @@ sealed interface TokenType {
          * Continue Statements
          */
         CONTINUE,
+
+        /**
+         * Function Statements
+         */
+        FUN,
+
+        /**
+         * Return Statements
+         */
+        RETURN,
     }
 
     /**

@@ -133,6 +133,23 @@ sealed interface Stmt {
     }
 
     /**
+     * Represents a continue statement.
+     */
+    data class Fun(override val context: Context, val name: Expr.Name, val params: List<Expr.Name>, val body: Stmt) :
+        Stmt {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitFunStmt(this)
+    }
+
+    /**
+     * Represents a continue statement.
+     */
+    data class Return(override val context: Context, val value: Expr) : Stmt {
+        override fun <X> accept(visitor: Visitor<X>): X =
+            visitor.visitReturnStmt(this)
+    }
+
+    /**
      * Represents a single expression statement.
      *
      * @property expr The expression contained by this statement
@@ -218,6 +235,20 @@ sealed interface Stmt {
          * @param stmt The statement to visit
          */
         fun visitContinueStmt(stmt: Continue): X
+
+        /**
+         * Visits a fun statement.
+         *
+         * @param stmt The statement to visit
+         */
+        fun visitFunStmt(stmt: Fun): X
+
+        /**
+         * Visits a return statement.
+         *
+         * @param stmt The statement to visit
+         */
+        fun visitReturnStmt(stmt: Return): X
 
         /**
          * Visits an expression statement.

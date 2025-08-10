@@ -1,3 +1,4 @@
-fun main = "Hello, World!";
+fun thing(x = 2) = x * 2;
 
-main();
+thing();
+thing(5);
