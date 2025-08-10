@@ -271,17 +271,6 @@ sealed interface Expr {
     }
 
     /**
-     * Represents a single set index operator expression.
-     *
-     * @property target The value to index
-     * @property value The value to set
-     */
-    data class Invoke(override val context: Context, val target: Expr, val args: Exprs) : Expr {
-        override fun <X> accept(visitor: Visitor<X>): X =
-            visitor.visitInvokeExpr(this)
-    }
-
-    /**
      * An interface that facilitates walking the expression tree.
      *
      * @param X The type of values to be produced by this visitor
@@ -360,7 +349,7 @@ sealed interface Expr {
         fun visitAssignExpr(expr: Assign): X
 
         /**
-         * Visits an get index expression.
+         * Visits a get index expression.
          *
          * @param expr The expression to visit
          */
@@ -372,12 +361,5 @@ sealed interface Expr {
          * @param expr The expression to visit
          */
         fun visitSetIndexExpr(expr: SetIndex): X
-
-        /**
-         * Visits an invoke expression.
-         *
-         * @param expr The expression to visit
-         */
-        fun visitInvokeExpr(expr: Invoke): X
     }
 }

@@ -60,10 +60,6 @@ sealed interface Expr {
     data class Name(override val context: Context, val value: String) : Expr {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitNameExpr(this)
-
-        companion object {
-            val none get() = Name(Context.none, "")
-        }
     }
 
     /**
@@ -280,13 +276,9 @@ sealed interface Expr {
      * @property target The value to index
      * @property value The value to set
      */
-    data class Invoke(override val context: Context, val target: Expr, val args: List<Arg>) : Expr {
+    data class Invoke(override val context: Context, val target: Expr, val args: Exprs) : Expr {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitInvokeExpr(this)
-    }
-
-    data class Arg(val context: Context, val name: Name, val value: Expr) {
-        val isNamed get() = name.value.isNotEmpty()
     }
 
     /**

@@ -535,7 +535,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         var expr = terminal()
 
         while (match(TokenType.Symbol.LEFT_SQUARE)) {
-            val (_, type) = get<TokenType.Symbol>()
+            val (_, _) = get<TokenType.Symbol>()
 
             val index = expr()
 

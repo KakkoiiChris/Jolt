@@ -153,10 +153,6 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         match(TokenType.Keyword.CONTINUE)                      -> continueStmt()
 
-        match(TokenType.Keyword.FUN)                           -> funStmt()
-
-        match(TokenType.Keyword.RETURN)                        -> returnStmt()
-
         else                                                   -> expressionStmt()
     }
 
@@ -343,71 +339,6 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         val context = start..here()
 
         return Stmt.Continue(context, label)
-    }
-
-    /**
-     * @return A single fun statement
-     */
-    private fun funStmt(): Stmt.Fun {
-        val start = here()
-
-        mustSkip(TokenType.Keyword.FUN)
-
-        val name = name()
-
-        val params = mutableListOf<Expr.Name>()
-
-        if (skip(TokenType.Symbol.LEFT_PAREN)) {
-            do {
-                params += name()
-            }
-            while (skip(TokenType.Symbol.COMMA))
-        }
-
-        val body = when {
-            match(TokenType.Symbol.EQUAL)      -> {
-                val bodyStart = here()
-
-                mustSkip(TokenType.Symbol.EQUAL)
-
-                val value = expr()
-
-                mustSkip(TokenType.Symbol.SEMICOLON)
-
-                val bodyContext = bodyStart..here()
-
-                Stmt.Return(bodyContext, value)
-            }
-
-            match(TokenType.Symbol.LEFT_BRACE) -> blockStmt()
-
-            else                               -> joltError(
-                "Invalid function body starting with '${token.type}'",
-                source,
-                here()
-            )
-        }
-
-        val context = start..here()
-
-        return Stmt.Fun(context, name, params, body)
-    }
-
-    /**
-     * @return A single return statement
-     */
-    private fun returnStmt(): Stmt.Return {
-        val start = here()
-
-        mustSkip(TokenType.Keyword.RETURN)
-
-        val value = if (!match(TokenType.Symbol.SEMICOLON)) expr() else Expr.Empty
-
-        mustSkip(TokenType.Symbol.SEMICOLON)
-
-        val context = start..here()
-
-        return Stmt.Return(context, value)
     }
 
     /**
@@ -644,46 +575,19 @@ class Parser(private val source: Source, private val lexer: Lexer) {
     private fun postfix(): Expr {
         var expr = terminal()
 
-        while (matchAny(TokenType.Symbol.LEFT_SQUARE, TokenType.Symbol.LEFT_PAREN)) {
-            val (context, type) = get<TokenType.Symbol>()
+        while (match(TokenType.Symbol.LEFT_SQUARE)) {
+            val (_, _) = get<TokenType.Symbol>()
 
-            expr = when (type) {
-                TokenType.Symbol.LEFT_SQUARE -> index(expr)
+            val index = expr()
 
-                TokenType.Symbol.LEFT_PAREN  -> invoke(expr)
+            mustSkip(TokenType.Symbol.RIGHT_SQUARE)
 
-                else                         -> TODO()
-            }
+            val context = expr.context..here()
+
+            expr = Expr.GetIndex(context, expr, index)
         }
 
         return expr
-    }
-
-    private fun index(target: Expr): Expr.GetIndex {
-        val index = expr()
-
-        mustSkip(TokenType.Symbol.RIGHT_SQUARE)
-
-        val context = target.context..here()
-
-        return Expr.GetIndex(context, target, index)
-    }
-
-    private fun invoke(target: Expr): Expr.Invoke {
-        val args = mutableListOf<Expr>()
-
-        if (!skip(TokenType.Symbol.RIGHT_PAREN)) {
-            do {
-                args += expr()
-            }
-            while (skip(TokenType.Symbol.COMMA))
-
-            mustSkip(TokenType.Symbol.RIGHT_PAREN)
-        }
-
-        val context = target.context..here()
-
-        return Expr.Invoke(context, target, args)
     }
 
     /**

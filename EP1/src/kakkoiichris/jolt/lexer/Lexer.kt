@@ -12,6 +12,7 @@ package kakkoiichris.jolt.lexer
 import kakkoiichris.jolt.JoltError
 import kakkoiichris.jolt.Source
 import kakkoiichris.jolt.joltError
+import kakkoiichris.jolt.lexer.Lexer.Companion.NUL
 
 /**
  * A class that converts source code into tokens, one at a time via the [Iterator] mechanism.
@@ -172,24 +173,7 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
 
             true
         }
-        else
-            false
-
-    /**
-     * Advances the lexer if the currently [peeked][peek] character matches the given character predicate.
-     *
-     * @param predicate The predicate to test against
-     *
-     * @return `true` if the predicate was matched, or `false` otherwise
-     */
-    private fun skip(predicate: (Char) -> Boolean) =
-        if (match(predicate)) {
-            step()
-
-            true
-        }
-        else
-            false
+        else false
 
     /**
      * Advances the lexer by the length of the given string if an equivalent substring can be found at the current position.
@@ -245,7 +229,7 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
      * Steps past any contiguous whitespace characters.
      */
     private fun skipWhitespace() {
-        while (skip(Char::isWhitespace)) Unit
+        while (match(Char::isWhitespace)) step()
     }
 
     /**
