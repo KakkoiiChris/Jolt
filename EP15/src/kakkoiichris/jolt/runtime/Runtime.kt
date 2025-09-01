@@ -38,7 +38,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
                 visit(stmt)
             }
         }
-        catch(r: Redirect.Return) {
+        catch (r: Redirect.Return) {
             return r.value
         }
         catch (r: Redirect) {
@@ -644,17 +644,49 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         joltError("Value of type '${target.type}' cannot be indexed", source, targetExpr.context)
 
     override fun visitInvokeExpr(expr: Expr.Invoke): JoltValue<*> {
-        val args = expr.args.map { visit(it.value) }//TODO IMPLEMENT
-
         val (fn, scope) = visit(expr.target) as? JoltFun ?: TODO()
+
+        val argMap = fn.params
+            .associate { it.name.value to Expr.Empty as Expr }
+            .toMutableMap()
+
+        for (arg in expr.namedArgs) {
+            if (arg.name.value !in argMap) {
+                joltError(
+                    "Parameter name '${arg.name.value}' is invalid for function '${fn.name.value}'",
+                    source,
+                    arg.name.context
+                )
+            }
+
+            argMap[arg.name.value] = arg.value
+        }
+
+        val positional = expr.positionalArgs
+
+        var pos = 0
+
+        for ((name, value) in argMap) {
+            if (value is Expr.Empty) {
+                argMap[name] = positional[pos++].value
+            }
+        }
 
         try {
             memory.push(Memory.Scope(scope))
 
-            for ((i, param) in fn.params.withIndex()) {
-                val value = if (i in args.indices) args[i] else JoltBool(false)
+            for ((name, value) in argMap) {
+                val value = visit(value)
 
-                memory.declare(true, param.name, value)
+                memory.declare(true, name, value)
+            }
+
+            if (fn.isVariadic && pos < positional.lastIndex) {
+                val variadic = positional.drop(pos).map { it.value }
+
+                val list = Expr.ListLiteral(Context.none, variadic)
+
+                memory.declare(true, fn.variadic!!.name, visit(list))
             }
 
             visit(fn.body)

@@ -142,6 +142,8 @@ sealed interface Stmt {
         val variadic: Parameter?,
         val body: Stmt
     ) : Stmt {
+        val isVariadic = variadic != null
+
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitFunStmt(this)
 

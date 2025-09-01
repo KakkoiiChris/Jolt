@@ -10,6 +10,7 @@
 package kakkoiichris.jolt.lexer
 
 import kakkoiichris.jolt.*
+import kakkoiichris.jolt.lexer.Lexer.Companion.NUL
 
 /**
  * A class that converts source code into tokens, one at a time via the [Iterator] mechanism.
@@ -417,13 +418,13 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
 
             skip('r')  -> '\r'
 
-            skip('\n') -> '\n'
+            skip('n') -> '\n'
 
             skip('\\') -> '\\'
 
             skip('"')  -> '"'
 
-            else       -> joltError("", source, start..here())
+            else       -> joltError("Character escape '\\${peek()}' is invalid", source, start..here())
         }
     }
 

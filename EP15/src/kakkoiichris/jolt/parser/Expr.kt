@@ -281,10 +281,15 @@ sealed interface Expr {
      * @property value The value to set
      */
     data class Invoke(override val context: Context, val target: Expr, val args: List<Argument>) : Expr {
+        val namedArgs get() = args.filter { it.isNamed }
+        val positionalArgs get() = args.filter { !it.isNamed }
+
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitInvokeExpr(this)
 
-        data class Argument(val context: Context, val name: Name, val value: Expr)
+        data class Argument(val context: Context, val name: Name, val value: Expr) {
+            val isNamed = name.value.isNotEmpty()
+        }
     }
 
     /**

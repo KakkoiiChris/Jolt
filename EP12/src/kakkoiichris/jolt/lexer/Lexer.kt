@@ -417,13 +417,13 @@ class Lexer(private val source: Source) : Iterator<Token<*>> {
 
             skip('r')  -> '\r'
 
-            skip('\n') -> '\n'
+            skip('n') -> '\n'
 
             skip('\\') -> '\\'
 
             skip('"')  -> '"'
 
-            else       -> joltError("", source, start..here())
+            else       -> joltError("Character escape '\\${peek()}' is invalid", source, start..here())
         }
     }
 

@@ -12,6 +12,7 @@ package kakkoiichris.jolt.parser
 import kakkoiichris.jolt.JoltError
 import kakkoiichris.jolt.Source
 import kakkoiichris.jolt.joltError
+import kakkoiichris.jolt.lexer.Context
 import kakkoiichris.jolt.lexer.Lexer
 import kakkoiichris.jolt.lexer.Token
 import kakkoiichris.jolt.lexer.TokenType
@@ -364,7 +365,11 @@ class Parser(private val source: Source, private val lexer: Lexer) {
                 val name = name()
 
                 if (skip(TokenType.Symbol.STAR)) {
-                    variadic
+                    val default = Expr.ListLiteral(Context.none, emptyList())
+
+                    variadic = Stmt.Fun.Parameter(name.context, name, default)
+
+                    break
                 }
 
                 val default = if (skip(TokenType.Symbol.EQUAL)) paramArgExpr() else null
@@ -373,7 +378,13 @@ class Parser(private val source: Source, private val lexer: Lexer) {
             }
             while (skip(TokenType.Symbol.COMMA))
 
-            mustSkip(TokenType.Symbol.RIGHT_PAREN)
+            mustSkip(
+                TokenType.Symbol.RIGHT_PAREN,
+                if (match(TokenType.Symbol.COMMA))
+                    "Variadic parameter must be the last parameter"
+                else
+                    "Function parameters list must be closed"
+            )
         }
 
         val body = when {
@@ -689,7 +700,15 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         if (!skip(TokenType.Symbol.RIGHT_PAREN)) {
             do {
-                args += Expr.Invoke.Argument(here(),Expr.Name.none, paramArgExpr())//TODO IMPLEMENT
+                var name = Expr.Name.none
+                var expr = paramArgExpr()
+
+                if (expr is Expr.Name && skip(TokenType.Symbol.EQUAL)) {
+                    name = expr
+                    expr = paramArgExpr()
+                }
+
+                args += Expr.Invoke.Argument(name.context, name, expr)
             }
             while (skip(TokenType.Symbol.COMMA))
 

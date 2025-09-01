@@ -58,6 +58,17 @@ class Memory {
     }
 
     /**
+     * Inserts a new variable into the current scope with the given information.
+     *
+     * @param isConstant Whether the variable was declared as a constant
+     * @param name The name of the variable
+     * @param value The value stored by the variable
+     */
+    fun declare(isConstant: Boolean, name: String, value: JoltValue<*>) {
+        stack.declare(isConstant, name, value)
+    }
+
+    /**
      * Walks from the current scope down until it finds the reference or reaches the bottom.
      *
      * @param name The variable name to retrieve
@@ -101,6 +112,17 @@ class Memory {
          */
         fun declare(isConstant: Boolean, name: Expr.Name, value: JoltValue<*>) {
             set(name.value, Reference(isConstant, value))
+        }
+
+        /**
+         * Inserts a new variable with the given information.
+         *
+         * @param isConstant Whether the variable was declared as a constant
+         * @param name The name of the variable
+         * @param value The value stored by the variable
+         */
+        fun declare(isConstant: Boolean, name: String, value: JoltValue<*>) {
+            set(name, Reference(isConstant, value))
         }
     }
 
