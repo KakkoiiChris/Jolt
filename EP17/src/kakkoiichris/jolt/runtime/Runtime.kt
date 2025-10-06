@@ -23,8 +23,6 @@ import kakkoiichris.jolt.parser.Stmt
 class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<JoltValue<*>> {
     private val memory = Memory()
 
-    private var last: JoltValue<*> = JoltNum(0.0)
-
     /**
      * Visits each of the program's statements in order.
      *
@@ -45,7 +43,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
             joltError("Unhandled ${r::class.simpleName!!.lowercase()}", source, r.origin)
         }
 
-        return last
+        return JoltUnit
     }
 
     /**
@@ -247,14 +245,19 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
     }
 
     /**
+     * @param stmt The statement to visit
+     */
+    override fun visitClassStmt(stmt: Stmt.Class) {
+        memory.declare(true, stmt.name, JoltClass(stmt, memory.peek()))
+    }
+
+    /**
      * Stores the value of the contained expression, and prints it to the screen.
      *
      * @param stmt The statement to visit
      */
     override fun visitExpressionStmt(stmt: Stmt.Expression) {
-        last = visit(stmt.expr)
-
-        println(last)
+        visit(stmt.expr)
     }
 
     /**
@@ -644,16 +647,19 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         joltError("Value of type '${target.type}' cannot be indexed", source, targetExpr.context)
 
     override fun visitInvokeExpr(expr: Expr.Invoke): JoltValue<*> {
-        val (fn, scope) = visit(expr.target) as? JoltFun ?: TODO()
+        val target = visit(expr.target)
 
-        val argMap = fn.params
+        target as? Invocable
+            ?: joltError("Value of type '${target.type}' cannot be invoked", source, expr.target.context)
+
+        val argMap = target.params
             .associate { it.name.value to Expr.Empty as Expr }
             .toMutableMap()
 
         for (arg in expr.namedArgs) {
             if (arg.name.value !in argMap) {
                 joltError(
-                    "Parameter name '${arg.name.value}' is invalid for function '${fn.name.value}'",
+                    "Parameter name '${arg.name.value}' is invalid for '${target.type} ${target.name.value}'",
                     source,
                     arg.name.context
                 )
@@ -672,25 +678,27 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
             }
         }
 
+        return when (target) {
+            is JoltFun   -> invokeFun(target, argMap)
+
+            is JoltClass -> invokeClass(target, argMap)
+
+            else         -> JoltUnit
+        }
+    }
+
+    private fun invokeFun(fn: JoltFun, args: Map<String, Expr>): JoltValue<*> {
         if (fn.isLinked) {
-            return linkedFun(fn, argMap.values.map(::visit))
+            return linkedFun(fn, args.values.map(::visit))
         }
 
         try {
-            memory.push(Memory.Scope(scope))
+            memory.push(Memory.Scope(fn.scope))
 
-            for ((name, value) in argMap) {
+            for ((name, value) in args) {
                 val value = visit(value)
 
                 memory.declare(true, name, value)
-            }
-
-            if (fn.isVariadic && pos < positional.lastIndex) {
-                val variadic = positional.drop(pos).map { it.value }
-
-                val list = Expr.ListLiteral(Context.none, variadic)
-
-                memory.declare(true, fn.variadic!!.name, visit(list))
             }
 
             visit(fn.body)
@@ -702,14 +710,37 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         return JoltUnit
     }
 
-    private fun linkedFun(fn: Stmt.Fun, args: List<JoltValue<*>>): JoltValue<*> {
+    private fun linkedFun(fn: JoltFun, args: List<JoltValue<*>>): JoltValue<*> {
         val link = Linker[fn.name]
-                   ?: joltError("No link for foreign function '${fn.name.value}'", source, fn.name.context)
+            ?: joltError("No link for foreign function '${fn.name.value}'", source, fn.name.context)
 
         if (args.size != link.arity) {
             joltError("Argument count mismatch for foreign function '${fn.name.value}'")
         }
 
         return link(this, args)
+    }
+
+    private fun invokeClass(clazz: JoltClass, args: Map<String, Expr>): JoltValue<*> {
+        val scope = Memory.Scope(clazz.scope)
+
+        try {
+            memory.push(scope)
+
+            for ((name, value) in args) {
+                val value = visit(value)
+
+                memory.declare(true, name, value)
+            }
+
+            for (stmt in clazz.init) {
+                visit(stmt)
+            }
+
+            return JoltInstance(Instance(clazz.value, scope))
+        }
+        finally {
+            memory.pop()
+        }
     }
 }

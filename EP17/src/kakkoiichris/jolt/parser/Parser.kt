@@ -16,6 +16,7 @@ import kakkoiichris.jolt.lexer.Context
 import kakkoiichris.jolt.lexer.Lexer
 import kakkoiichris.jolt.lexer.Token
 import kakkoiichris.jolt.lexer.TokenType
+import kakkoiichris.jolt.runtime.Invocable
 
 /**
  * A class that converts tokens into [expressions][Expr], all at once via the [Program] class.
@@ -157,6 +158,8 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         match(TokenType.Keyword.FUN)                           -> funStmt()
 
         match(TokenType.Keyword.RETURN)                        -> returnStmt()
+
+        match(TokenType.Keyword.CLASS)                         -> classStmt()
 
         else                                                   -> expressionStmt()
     }
@@ -356,9 +359,10 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         val name = name()
 
-        val params = mutableListOf<Stmt.Fun.Parameter>()
+        val params = mutableListOf<Invocable.Parameter>()
 
-        var variadic: Stmt.Fun.Parameter? = null
+        var variadic: Invocable.Parameter? = null
+        var isVariadic = false
 
         if (skip(TokenType.Symbol.LEFT_PAREN)) {
             do {
@@ -367,14 +371,15 @@ class Parser(private val source: Source, private val lexer: Lexer) {
                 if (skip(TokenType.Symbol.STAR)) {
                     val default = Expr.ListLiteral(Context.none, emptyList())
 
-                    variadic = Stmt.Fun.Parameter(name.context, name, default)
+                    variadic = Invocable.Parameter(name.context, null, name, default)
+                    isVariadic = true
 
                     break
                 }
 
                 val default = if (skip(TokenType.Symbol.EQUAL)) paramArgExpr() else null
 
-                params += Stmt.Fun.Parameter(name.context, name, default)
+                params += Invocable.Parameter(name.context, null, name, default)
             }
             while (skip(TokenType.Symbol.COMMA))
 
@@ -385,6 +390,11 @@ class Parser(private val source: Source, private val lexer: Lexer) {
                 else
                     "Function parameters list must be closed"
             )
+        }
+
+
+        if (isVariadic) {
+            params += variadic!!
         }
 
         val body = when {
@@ -421,7 +431,7 @@ class Parser(private val source: Source, private val lexer: Lexer) {
 
         val context = start..here()
 
-        return Stmt.Fun(context, name, params, variadic, body)
+        return Stmt.Fun(context, name, isVariadic, params, body)
     }
 
     /**
@@ -439,6 +449,72 @@ class Parser(private val source: Source, private val lexer: Lexer) {
         val context = start..here()
 
         return Stmt.Return(context, value)
+    }
+
+    /**
+     * @return A single class statement
+     */
+    private fun classStmt(): Stmt.Class {
+        val start = here()
+
+        mustSkip(TokenType.Keyword.CLASS)
+
+        val name = name()
+
+        val params = mutableListOf<Invocable.Parameter>()
+
+        var variadic: Invocable.Parameter? = null
+        var isVariadic = false
+
+        if (skip(TokenType.Symbol.LEFT_PAREN)) {
+            do {
+                val isConstant = when {
+                    skip(TokenType.Keyword.LET) -> true
+                    skip(TokenType.Keyword.VAR) -> false
+                    else                        -> null
+                }
+
+                val name = name()
+
+                if (skip(TokenType.Symbol.STAR)) {
+                    val default = Expr.ListLiteral(Context.none, emptyList())
+
+                    variadic = Invocable.Parameter(name.context, isConstant, name, default)
+                    isVariadic = true
+
+                    break
+                }
+
+                val default = if (skip(TokenType.Symbol.EQUAL)) paramArgExpr() else null
+
+                params += Invocable.Parameter(name.context, isConstant, name, default)
+            }
+            while (skip(TokenType.Symbol.COMMA))
+
+            mustSkip(
+                TokenType.Symbol.RIGHT_PAREN,
+                if (match(TokenType.Symbol.COMMA))
+                    "Variadic parameter must be the last parameter"
+                else
+                    "Class parameters list must be closed"
+            )
+        }
+
+        if (isVariadic) {
+            params += variadic!!
+        }
+
+        val init = mutableListOf<Stmt>()
+
+        mustSkip(TokenType.Symbol.LEFT_BRACE, "Class body must start with an open brace")
+
+        while (!skip(TokenType.Symbol.RIGHT_BRACE)) {
+            init += stmt()
+        }
+
+        val context = start..here()
+
+        return Stmt.Class(context, name, isVariadic, params, init)
     }
 
     /**

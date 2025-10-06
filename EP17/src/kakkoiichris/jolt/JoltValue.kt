@@ -1,6 +1,8 @@
 package kakkoiichris.jolt
 
 import kakkoiichris.jolt.parser.Stmt
+import kakkoiichris.jolt.runtime.Instance
+import kakkoiichris.jolt.runtime.Invocable
 import kakkoiichris.jolt.runtime.Memory
 import kotlin.math.floor
 
@@ -44,11 +46,11 @@ data class JoltNum(override val value: Double) : JoltValue<Double> {
     override val iterable get() = (0..<value.toInt()).map { JoltNum(it.toDouble()) }.toList()
 
     private fun truncate() = (
-            if (value == floor(value))
-                value.toInt()
-            else
-                value
-                             ).toString()
+        if (value == floor(value))
+            value.toInt()
+        else
+            value
+        ).toString()
 
     override fun toString() = truncate()
 }
@@ -72,9 +74,54 @@ data class JoltList(override val value: MutableList<JoltValue<*>>) : JoltValue<M
         "[]"
 }
 
-data class JoltFun(override val value: Stmt.Fun, val scope: Memory.Scope) : JoltValue<Stmt.Fun> {
+data class JoltFun(override val value: Stmt.Fun, override val scope: Memory.Scope) : JoltValue<Stmt.Fun>, Invocable {
     override val type get() = "fun"
+
+    override val name get() = value.name
+
+    override val isVariadic get() = value.isVariadic
+
+    override val params get() = value.params
+
+    val isLinked get() = value.isLinked
+
+    val body get() = value.body
 
     override fun toString() =
         "fun ${value.name}${value.params.joinToString(prefix = "(", postfix = ")", separator = ", ") { it.name.value }}"
+}
+
+data class JoltClass(override val value: Stmt.Class, override val scope: Memory.Scope) : JoltValue<Stmt.Class>,
+    Invocable {
+    override val type get() = "class"
+
+    override val name get() = value.name
+
+    override val isVariadic get() = value.isVariadic
+
+    override val params get() = value.params
+
+    val init get() = value.init
+
+    override fun toString() =
+        "class ${value.name}${
+            value.params.joinToString(
+                prefix = "(",
+                postfix = ")",
+                separator = ", "
+            ) { it.name.value }
+        }"
+}
+
+data class JoltInstance(override val value: Instance) : JoltValue<Instance> {
+    override val type get() = "instance"
+
+    override fun toString() =
+        "instance of ${value.`class`.name.value}${
+            value.scope.entries.joinToString(
+                prefix = "(",
+                postfix = ")",
+                separator = ", "
+            ) { "${it.key} = ${it.value.value}" }
+        }"
 }

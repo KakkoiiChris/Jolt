@@ -1,3 +1,7 @@
+class Vector(var x, var y){}
+
+let v = Vector(42, 69);
+
 fun println(x);
 
-println("Hello, World!");
+println(v);

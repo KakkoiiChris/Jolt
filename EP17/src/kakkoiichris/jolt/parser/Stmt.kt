@@ -10,6 +10,7 @@
 package kakkoiichris.jolt.parser
 
 import kakkoiichris.jolt.lexer.Context
+import kakkoiichris.jolt.runtime.Invocable
 
 /**
  * Convenient type alias for a list of statements.
@@ -138,18 +139,14 @@ sealed interface Stmt {
     data class Fun(
         override val context: Context,
         val name: Expr.Name,
-        val params: List<Parameter>,
-        val variadic: Parameter?,
+        val isVariadic: Boolean,
+        val params: List<Invocable.Parameter>,
         val body: Stmt
     ) : Stmt {
-        val isVariadic = variadic != null
-
         val isLinked = body is Empty
 
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitFunStmt(this)
-
-        data class Parameter(val context: Context, val name: Expr.Name, val default: Expr?)
     }
 
     /**
@@ -163,13 +160,12 @@ sealed interface Stmt {
     data class Class(
         override val context: Context,
         val name: Expr.Name,
-        val parameters: List<Parameter>,
-        val body: Block
+        val isVariadic: Boolean,
+        val params: List<Invocable.Parameter>,
+        val init: List<Stmt>
     ) : Stmt {
         override fun <X> accept(visitor: Visitor<X>): X =
             visitor.visitClassStmt(this)
-
-        data class Parameter(val context: Context, val name: Expr.Name, val default: Expr?)
     }
 
     /**
