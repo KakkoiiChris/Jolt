@@ -1,0 +1,29 @@
+class Vector(var x, var y){}
+
+class Pair(var a, var b){}
+
+let x = [Pair(Vector(1,2),Vector(3,4)), Pair(Vector(5,6),Vector(7,8))];
+
+println(x);
+println(x[0]);
+println(x[0].a);
+println(x[0].a.x);
+println(x[0].a.y);
+println(x[0].b);
+println(x[0].b.x);
+println(x[0].b.y);
+println(x[1]);
+println(x[1].a);
+println(x[1].a.x);
+println(x[1].a.y);
+println(x[1].b);
+println(x[1].b.x);
+println(x[1].b.y);
+
+class X(let x) {
+    fun y = this.x * this.x;
+}
+
+let x = X(5);
+
+println(x.y());
