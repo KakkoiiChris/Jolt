@@ -4,6 +4,8 @@ class Pair(var a, var b){}
 
 let x = [Pair(Vector(1,2),Vector(3,4)), Pair(Vector(5,6),Vector(7,8))];
 
+fun println(x);
+
 println(x);
 println(x[0]);
 println(x[0].a);

@@ -695,8 +695,8 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         try {
             memory.push(Memory.Scope(fn.scope))
 
-            for ((name, value) in args) {
-                val value = visit(value)
+            for ((name, expr) in args) {
+                val value = visit(expr)
 
                 memory.declare(true, name, value)
             }
@@ -727,8 +727,8 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         try {
             memory.push(scope)
 
-            for ((name, value) in args) {
-                val value = visit(value)
+            for ((name, expr) in args) {
+                val value = visit(expr)
 
                 memory.declare(true, name, value)
             }

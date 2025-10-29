@@ -125,11 +125,5 @@ data class JoltInstance(override val value: Instance) : JoltValue<Instance> {
     }
 
     override fun toString() =
-        "instance of ${value.`class`.name.value}${
-            value.scope.entries.joinToString(
-                prefix = "(",
-                postfix = ")",
-                separator = ", "
-            ) { "${it.key} = ${it.value.value}" }
-        }"
+        "instance of ${value.`class`.name.value}"
 }

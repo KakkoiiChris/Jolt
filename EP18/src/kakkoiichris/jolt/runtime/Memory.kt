@@ -9,9 +9,10 @@
  */
 package kakkoiichris.jolt.runtime
 
-import kakkoiichris.jolt.JOLT
 import kakkoiichris.jolt.JoltValue
+import kakkoiichris.jolt.joltError
 import kakkoiichris.jolt.parser.Expr
+import java.util.*
 
 /**
  * Centralized storage for all declared variables.
@@ -20,23 +21,39 @@ class Memory {
     /**
      * A map of references to all declared variables.
      */
-    private var stack = Scope()
+    private var stack = Stack<Scope>()
+
+    init {
+        stack.push(Scope())
+    }
 
     /**
      * Puts an empty scope onto the stack.
      */
-    fun push(scope: Scope = Scope(stack)) {
-        stack = scope
+    fun push(scope: Scope) {
+        stack.push(scope)
+    }
+
+    fun push() {
+        if (stack.isEmpty()) {
+            joltError("MEMORY STACK UNDERFLOW")
+        }
+
+        stack.push(Scope(stack.peek()))
     }
 
     /**
      * Removes the current scope from the stack.
      */
     fun pop() {
-        stack = stack.parent ?: error("JOLT ERROR $JOLT MEMORY STACK UNDERFLOW")
+        if (stack.isEmpty()) {
+            joltError("MEMORY STACK UNDERFLOW")
+        }
+
+        stack.pop()
     }
 
-    fun peek() = stack
+    fun peek() = stack.peek()
 
     /**
      * @param name The name to look up
@@ -44,7 +61,7 @@ class Memory {
      * @return `true` if the name exists in the current scope, or `false` otherwise
      */
     fun isDeclared(name: Expr.Name) =
-        stack.isDeclared(name)
+        stack.peek().isDeclared(name)
 
     /**
      * Inserts a new variable into the current scope with the given information.
@@ -54,7 +71,7 @@ class Memory {
      * @param value The value stored by the variable
      */
     fun declare(isConstant: Boolean, name: Expr.Name, value: JoltValue<*>) {
-        stack.declare(isConstant, name, value)
+        stack.peek().declare(isConstant, name, value)
     }
 
     /**
@@ -65,7 +82,7 @@ class Memory {
      * @param value The value stored by the variable
      */
     fun declare(isConstant: Boolean, name: String, value: JoltValue<*>) {
-        stack.declare(isConstant, name, value)
+        stack.peek().declare(isConstant, name, value)
     }
 
     /**
@@ -76,14 +93,10 @@ class Memory {
      * @return The reference stored at the given name, or null if it does not exist
      */
     operator fun get(name: String): Reference? {
-        var here: Scope? = stack
-
-        while (here != null) {
+        for (here in stack) {
             if (name in here) {
                 return here[name]!!
             }
-
-            here = here.parent
         }
 
         return null
