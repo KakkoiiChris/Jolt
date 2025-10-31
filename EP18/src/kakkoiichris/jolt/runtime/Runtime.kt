@@ -594,7 +594,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
 
     override fun visitGetIndexExpr(expr: Expr.GetIndex) = when (val target = visit(expr.target)) {
         is JoltString -> when (val index = visit(expr.index)) {
-            is JoltNum -> if (index.value.toInt() !in target.value.indices) {
+            is JoltNum -> if (index.value.toInt() in target.value.indices) {
                 JoltString(target.value[index.value.toInt()].toString())
             }
             else {
@@ -605,7 +605,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         }
 
         is JoltList   -> when (val index = visit(expr.index)) {
-            is JoltNum -> if (index.value.toInt() !in target.value.indices) {
+            is JoltNum -> if (index.value.toInt() in target.value.indices) {
                 target.value[index.value.toInt()]
             }
             else {
@@ -623,7 +623,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
 
         when (val target = visit(expr.target)) {
             is JoltList -> when (val index = visit(expr.index)) {
-                is JoltNum -> if (index.value.toInt() !in target.value.indices) {
+                is JoltNum -> if (index.value.toInt() in target.value.indices) {
                     target.value[index.value.toInt()] = value
                 }
 
@@ -748,7 +748,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         val target = visit(expr.target)
 
         if (target !is JoltInstance) {
-            nonIndexableValue(target, expr.target)
+            inaccessibleValue(target, expr.target)
         }
 
         return target[expr.member]?.value ?: TODO("NO MEMBER")
@@ -758,7 +758,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
         val target = visit(expr.target)
 
         if (target !is JoltInstance) {
-            nonIndexableValue(target, expr.target)
+            inaccessibleValue(target, expr.target)
         }
 
         val value = visit(expr.value)
@@ -767,4 +767,7 @@ class Runtime(private val source: Source) : Stmt.Visitor<Unit>, Expr.Visitor<Jol
 
         return value
     }
+
+    private fun inaccessibleValue(target: JoltValue<*>, targetExpr: Expr): Nothing =
+        joltError("Value of type '${target.type}' cannot be accessed", source, targetExpr.context)
 }

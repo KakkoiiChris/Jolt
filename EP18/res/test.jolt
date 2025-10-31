@@ -22,10 +22,10 @@ println(x[1].b);
 println(x[1].b.x);
 println(x[1].b.y);
 
-class X(let x) {
-    fun y = this.x * this.x;
+class Z(let z) {
+    fun y = z * z;
 }
 
-let x = X(5);
+let z = Z(5);
 
-println(x.y());
+println(z.y());
